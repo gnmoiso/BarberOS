@@ -1,6 +1,6 @@
 # ADR-003 — .NET 10 LTS en lugar de .NET 9
 
-**Estado:** Propuesto (requiere confirmación del product owner — el mandato original especifica .NET 9) · **Fecha:** 2026-06-09
+**Estado:** Reemplazado por [ADR-011](ADR-011-estrategia-versiones.md) (que formaliza .NET 10 LTS y la política de versiones completa) · **Fecha:** 2026-06-09
 
 ## Contexto
 

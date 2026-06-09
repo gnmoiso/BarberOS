@@ -67,3 +67,43 @@ Reglas:
 - **Rate limiting por tenant** además de por IP: un tenant abusivo no degrada a los demás.
 - **Cifrado/llaves**: no se requiere llave por tenant en v1; si un Enterprise lo exige, la ruta híbrida (BD dedicada) lo cubre.
 - **Pruebas obligatorias**: la suite de integración incluye tests de fuga cross-tenant (crear datos en tenant A, intentar leerlos autenticado en tenant B) como gate de CI permanente.
+
+## 5. Conclusión definitiva (cierre de Fase 0)
+
+> **La estrategia multi-tenant inicial de BarberOS es la Opción A: base de datos PostgreSQL única con `tenant_id` en toda tabla de negocio, filtros globales de EF Core y Row Level Security como segunda defensa.** Las opciones B (schema por tenant) y C (base por tenant) quedan formalmente descartadas para el lanzamiento; C sobrevive únicamente como ruta de evolución selectiva para tenants Enterprise. Decisión registrada en [ADR-002](adr/ADR-002-multitenant-pool-rls.md). Nada de esto es implícito ni revisable sin un ADR que reemplace al ADR-002.
+
+### Justificación técnica (resumen ejecutivo)
+
+El perfil de carga de BarberOS es miles de tenants pequeños (decenas de citas/día cada uno). En ese perfil, el factor dominante es el **costo operativo por tenant** (migraciones, backups, monitoreo, provisión), no el aislamiento físico de rendimiento. La Opción A reduce ese costo marginal a ~cero y su única debilidad real —una fuga por bug de aplicación— se neutraliza con dos mecanismos independientes (filtro ORM + RLS) más una suite de fuga cross-tenant como gate de CI.
+
+### Costos estimados (infraestructura, orden de magnitud USD/mes)
+
+| Escala | Opción A (elegida) | Opción B (schemas) | Opción C (BD/tenant) |
+|--------|-------------------|--------------------|--------------------|
+| 10 tenants | 40–60 (1 VPS 8GB) | 40–60 + horas de operación de migraciones ×N | 60–100 + provisión/backup por BD |
+| 100 tenants | 60–100 (VPS 16–32GB + CDN) | 80–150 + drift de esquemas creciente | 300–800 (RAM por conexión/BD, backups ×100) |
+| 1.000 tenants | 150–300 (app + DB dedicada + Redis) | inviable en la práctica (migraciones de horas, catálogo degradado) | 1.500–5.000 + tooling propio de orquestación |
+| Costo marginal por tenant | **≈ 0** | bajo en infra, alto en horas de ingeniería | 1.5–5 USD/tenant/mes |
+
+(El costo dominante de B y C no es el hardware: son las horas de ingeniería y el riesgo operativo de gestionar N esquemas/bases.)
+
+### Riesgos aceptados de la Opción A y su mitigación
+
+| Riesgo | Mitigación |
+|--------|------------|
+| Fuga cross-tenant por bug | RLS independiente del ORM + tests de fuga en CI + revisión obligatoria de PRs de tenancy |
+| Noisy neighbor | Rate limiting por tenant; límites de plan; ruta híbrida para tenants pesados |
+| Restauración granular por tenant no es física | Procedimiento lógico documentado y ensayado ([10-backups-dr](10-backups-dr.md) §3) |
+| RLS + PgBouncer (transaction pooling) | `SET app.tenant_id` por transacción, diseñado así desde Fase 3 |
+
+### Estrategia de migración futura (ruta híbrida, ya diseñada)
+
+Cuando un tenant Enterprise exija aislamiento físico (contrato, regulación o >5% de la carga total):
+
+1. Provisionar BD dedicada (mismo esquema, misma versión de migraciones).
+2. Exportar el grafo de datos del tenant con el script de restauración por tenant (idéntico al de DR — se ensaya mensualmente).
+3. Ventana de mantenimiento breve para el tenant (su tráfico es predecible) con corte de escrituras.
+4. Actualizar el routing en la connection factory tenant-aware (un registro de configuración; cero cambios en módulos).
+5. Verificación de integridad y purga diferida de sus filas en la base pool.
+
+El código nunca sabe en qué base vive un tenant: esa indirección se construye en Fase 3 y es la póliza de seguro de esta decisión.

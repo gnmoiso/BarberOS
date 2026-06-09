@@ -53,7 +53,7 @@ Dentro de cada capa, el código se organiza por módulo funcional, no por tipo t
 | **Identity** | Usuarios, roles por tenant, sesiones, refresh tokens, login history | `User`, `RefreshTokenFamily` |
 | **Catalog** | Servicios, categorías, precios, duración | `Service` |
 | **Scheduling** | Horarios de trabajo, bloqueos, vacaciones, festivos, disponibilidad | `WorkSchedule`, `ScheduleBlock` |
-| **Booking** | Reservas: crear, cancelar, reagendar; historial; anti doble-reserva; penalizaciones por cancelación | `Appointment`, `PenaltyPolicy`, `PenaltyRecord` |
+| **Booking** | Reservas: crear, cancelar, reagendar; historial; anti doble-reserva; penalizaciones por cancelación; política de no-show | `Appointment`, `PenaltyPolicy`, `PenaltyRecord`, `NoShowPolicy`, `NoShowRecord` |
 | **CRM** | Clientes de cada barbería, historial, notas | `Customer` |
 | **Notifications** | Plantillas, envíos, proveedores (WhatsApp/email/SMS), outbox | `NotificationMessage` |
 | **Billing** | Suscripciones, pagos, intentos, facturas, reembolsos | `Subscription`, `Payment`, `Invoice` |
@@ -87,6 +87,7 @@ Catálogo inicial de eventos (diseño, no implementación):
 
 - `AppointmentCreated`, `AppointmentConfirmed`, `AppointmentCancelled`, `AppointmentRescheduled`, `AppointmentCompleted`, `AppointmentNoShow`
 - `PenaltyApplied`, `PenaltyConsumed`, `PenaltyWaived`, `PenaltyExpired`
+- `NoShowRecorded`, `NoShowWaived`, `CustomerBookingBlocked`, `CustomerBookingUnblocked`
 - `CustomerRegistered`
 - `PaymentApproved`, `PaymentDeclined`, `RefundIssued`
 - `SubscriptionActivated`, `SubscriptionRenewed`, `SubscriptionPastDue`, `SubscriptionExpired`, `SubscriptionCancelled`

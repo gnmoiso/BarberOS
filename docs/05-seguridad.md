@@ -12,7 +12,7 @@ Objetivo de referencia: OWASP ASVS nivel 2 para los módulos de auth, pagos y da
   - Vida: 30 días deslizantes, máximo absoluto 90 días.
   - Revocación: por sesión, por dispositivo, o global ("cerrar sesión en todos los dispositivos").
 - **Contraseñas**: Argon2id (fallback PBKDF2-SHA256 con parámetros OWASP si el hosting lo exige); política: ≥ 10 caracteres, chequeo contra diccionario de contraseñas filtradas; sin rotación forzada.
-- **Verificación de email** obligatoria para panel de barbería; para clientes, requerida antes de la primera reserva (o verificación por WhatsApp OTP — decisión de producto en Fase 2).
+- **Verificación de identidad**: email obligatorio para usuarios de panel de barbería; para clientes finales, **OTP por WhatsApp antes de la primera reserva** (decisión del product owner, 2026-06-09 — coherente con que el WhatsApp del cliente es el canal operativo de notificaciones). El email del cliente queda opcional.
 - **Password reset**: token de un solo uso, hasheado en BD, vida 30 min, invalida sesiones activas opcionales; respuesta idéntica exista o no el email (no enumeración de cuentas).
 
 ## 2. Fuerza bruta y bots

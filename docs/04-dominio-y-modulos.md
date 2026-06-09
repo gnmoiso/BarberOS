@@ -38,7 +38,7 @@ Reglas de negocio:
 3. Anticipación mínima/máxima configurables por tenant (default: ≥ 30 min, ≤ 60 días).
 4. Cancelación por cliente permitida en cualquier momento, pero sujeta a la **política de penalización del tenant** (ver §3.1): cancelar fuera de la ventana gratuita y superado el cupo tolerado genera `PenaltyRecord`.
 5. Reagendar = transición atómica (cancela + crea con vínculo `rescheduled_from_id`), nunca dos pasos sueltos.
-6. Política de no-show: marcado manual por la barbería; contador por cliente visible en CRM.
+6. Política de no-show formal (ver §3.2): marcado manual por la barbería tras la tolerancia configurada, con recargo incrementado, bloqueos temporales/permanentes y perdón manual.
 7. **Idempotencia**: `Idempotency-Key` obligatoria en creación de reservas (reintentos de red móvil no duplican citas).
 8. Estados: `Pending → Confirmed → Completed | Cancelled | NoShow`. Si el tenant activa auto-confirmación, nace en `Confirmed`.
 9. Toda transición emite domain event + registro en `appointment_history`.
@@ -58,6 +58,23 @@ Configurable **por barbería** (nunca global), desde el panel del Admin:
 | `penalty_expiration_days` | caducidad de una penalización no consumida | sin caducidad |
 
 Flujo: cancelación tardía de cita confirmada → `PenaltyRecord` activo (evento `PenaltyApplied`) → la siguiente reserva del cliente en esa barbería muestra el precio recargado **antes de confirmar** (corte $40.000 + 50% = $60.000 COP) y lo registra desglosado → al completarse la cita el record pasa a `Consumed`. El staff puede **perdonar** (`PenaltyWaiver` con motivo y auditoría, evento `PenaltyWaived`). Todo cambio queda en `penalty_history`. El cliente penalizado ve su estado en su perfil; la barbería ve sus clientes penalizados en el CRM.
+
+### 3.2 Política de No-Show (submódulo NoShow — [ADR-012](adr/ADR-012-no-show.md))
+
+Configurable **por barbería**, separada de la de cancelación pero reutilizando la mecánica de recargos:
+
+| Parámetro | Significado | Default |
+|-----------|-------------|---------|
+| `is_enabled` | activar/desactivar consecuencias de no-show | off |
+| `tolerance_minutes` | gracia tras la hora de inicio antes de poder marcar la falta | 15 min |
+| `max_no_shows` | faltas toleradas por período | 1 |
+| `evaluation_period_days` | período móvil de conteo | 90 |
+| `penalty_increment_percentage` | recargo **adicional** al de cancelación en la siguiente reserva | 25% |
+| `temporary_block_days` | bloqueo temporal de reserva online al superar el cupo | 0 (off) |
+| `permanent_block_threshold` | faltas que disparan bloqueo permanente | off |
+| `allow_manual_waiver` | permitir perdón manual del staff | on |
+
+Reglas: el staff marca la falta solo tras la tolerancia (el worker sugiere candidatas, nunca marca solo); la consecuencia económica es un `PenaltyRecord` con porcentaje combinado (cancelación + incremento), siempre informativo; el bloqueo temporal impide reservar online pero el panel puede crear citas (override consciente); el bloqueo permanente solo se revierte con perdón del Admin; todo queda en `no_show_history` y el cliente bloqueado ve motivo y vigencia. Eventos: `NoShowRecorded`, `NoShowWaived`, `CustomerBookingBlocked`, `CustomerBookingUnblocked`. La cotización de reservas consolida ambas políticas en un único servicio de dominio (`BookingPricingService`).
 
 ## 4. Módulo Servicios (Catalog)
 
@@ -130,9 +147,12 @@ KPIs definidos (queries de lectura sobre datos transaccionales; sin pipeline de 
 | Ocupación por barbero | minutos reservados / minutos disponibles del horario |
 | Clientes penalizados | clientes con ≥ 1 `PenaltyRecord` activo o consumido en el período |
 | Cancelaciones por cliente | ranking de clientes por cancelaciones tardías en el período |
-| % de cancelación | citas canceladas / citas creadas, por período |
 | Clientes reincidentes (cancelación) | clientes con ≥ 2 cancelaciones tardías en el período de evaluación |
-| Ingresos potencialmente perdidos | suma de `base_price` de citas canceladas tardíamente no reagendadas |
+| Ingresos potencialmente perdidos (cancelación) | suma de `base_price` de citas canceladas tardíamente no reagendadas |
+| No-shows por mes | count de `no_show_records` por período |
+| Clientes reincidentes (no-show) | clientes con ≥ 2 no-shows en el período de evaluación |
+| Horas perdidas por no-show | suma de duración de citas marcadas `NoShow` |
+| Ingresos potencialmente perdidos (no-show) | suma de `base_price` de citas `NoShow` |
 
 Nota: "ingresos" en BarberOS son siempre **estimados sobre precios informativos** (la plataforma no procesa el dinero de los servicios).
 

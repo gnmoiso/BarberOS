@@ -8,7 +8,7 @@ Escala: Probabilidad (P) e Impacto (I) en Bajo / Medio / Alto.
 |--------|---|---|------------|
 | Fuga de datos cross-tenant por bug de aplicación | M | **A** | Defensa doble (filtros EF + RLS); suite de fuga cross-tenant como gate permanente de CI; revisión obligatoria de todo PR que toque tenancy |
 | Doble reserva bajo concurrencia | M | A | Constraint `EXCLUDE` en BD (no solo validación de app); test de carrera en CI |
-| .NET 9 sin soporte (EOL 12-may-2026) | **A** | A | Adoptar .NET 10 LTS desde Fase 1 ([ADR-003](adr/ADR-003-dotnet-10-lts.md)) |
+| .NET 9 sin soporte (EOL 12-may-2026) | **A** | A | Resuelto: .NET 10 LTS desde Fase 1 + política solo-LTS ([ADR-011](adr/ADR-011-estrategia-versiones.md)) |
 | Migraciones EF destructivas en prod | M | A | Política expand→migrate→contract; migrador como job separado; backup verificado pre-migración (gate de pipeline) |
 | Deuda por acoplamiento entre módulos | M | M | Reglas de dependencia verificadas (ArchUnit.NET en CI); comunicación entre módulos solo por contratos/eventos |
 | Pérdida de notificaciones (citas sin recordatorio) | M | M | Outbox transaccional + reintentos + dead-letter visible en panel; alerta de outbox atascado |
@@ -47,6 +47,7 @@ Escala: Probabilidad (P) e Impacto (I) en Bajo / Medio / Alto.
 | Bus factor = 1 (equipo mínimo) | A | A | Todo en runbooks y ADRs; despliegue 100% automatizado; cero conocimiento solo-en-cabeza |
 | Backup que nunca se probó no restaura | M | **A** | Drill de restore mensual automatizado + simulacro DR trimestral con RTO medido |
 | Soporte a barberías no técnicas desborda al equipo | A | M | Onboarding guiado (wizard), plantillas precargadas, FAQ/video; dead-letter y errores visibles en panel para autodiagnóstico |
+| Políticas punitivas mal calibradas (penalizaciones/bloqueos) ahuyentan clientes finales | M | M | Defaults conservadores y desactivadas por defecto; transparencia previa a la reserva; perdón manual siempre disponible; KPIs de cancelación/no-show para calibrar con datos |
 | Dependencia de un solo proveedor de pagos | M | M | `IPaymentProvider` con Mercado Pago como segundo proveedor activable |
 
 ## Riesgo de producto (el mayor de todos)

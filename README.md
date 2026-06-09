@@ -2,9 +2,9 @@
 
 Plataforma SaaS multi-tenant para barberías. Los clientes finales la usan gratis; las barberías pagan una suscripción mensual por plan. Mercado inicial: Colombia, con diseño preparado para expansión internacional.
 
-> **Estado del proyecto: Fase 0 — Arquitectura y Diseño.**
-> Este repositorio contiene exclusivamente documentación de análisis, arquitectura y diseño.
-> No existe código fuente todavía. La implementación inicia únicamente tras aprobación explícita de la Fase 0.
+> **Estado del proyecto: Fase 0 aprobada con observaciones menores (2026-06-09).**
+> Este repositorio contiene exclusivamente documentación de análisis, arquitectura y diseño ([acta de cierre](docs/00-fase0-checklist.md)).
+> No existe código fuente todavía. La implementación de la Fase 1 inicia tras la planificación detallada y la confirmación de sincronización del remoto.
 
 ---
 
@@ -14,7 +14,7 @@ Plataforma SaaS multi-tenant para barberías. Los clientes finales la usan grati
 |---|----------|---------|-----|
 | 1 | **Monolito modular + Clean Architecture** | Un solo desplegable con módulos de frontera estricta. Microservicios descartados para esta etapa. | [ADR-001](docs/adr/ADR-001-monolito-modular.md) |
 | 2 | **Multi-tenant: BD única + TenantId + RLS** | Opción A (pool) con Row Level Security de PostgreSQL como segunda línea de defensa. Ruta de evolución a híbrido para tenants Enterprise. | [ADR-002](docs/adr/ADR-002-multitenant-pool-rls.md) |
-| 3 | **.NET 10 LTS en lugar de .NET 9** | .NET 9 (STS) salió de soporte el 12-may-2026. Se recomienda .NET 10 LTS (soporte hasta nov-2028). **Decisión escalada al product owner.** | [ADR-003](docs/adr/ADR-003-dotnet-10-lts.md) |
+| 3 | **.NET 10 LTS y política de versiones** | .NET 9 (STS) salió de soporte el 12-may-2026. Decisión formal: .NET 10 LTS + política solo-LTS, upgrades entre fases con criterios definidos (también para Angular). | [ADR-011](docs/adr/ADR-011-estrategia-versiones.md) |
 | 4 | **Redis diferido (no en v1)** | Rate limiting in-process, refresh tokens en PostgreSQL, caché con HybridCache (backend in-memory). Triggers definidos para introducir Redis sin refactor. | [ADR-004](docs/adr/ADR-004-redis-diferido.md) |
 | 5 | **Eventos vía Outbox transaccional** | Domain events in-process; integration events persistidos en outbox y despachados por worker. Garantiza que WhatsApp/notificaciones nunca se pierdan. | [ADR-005](docs/adr/ADR-005-outbox-eventos.md) |
 | 6 | **Storage: Cloudflare R2 (prod) + MinIO (dev)** | API S3-compatible vía `IStorageProvider`. Cero costo de egreso. Nada de binarios en PostgreSQL. | [ADR-006](docs/adr/ADR-006-storage-r2.md) |
@@ -23,11 +23,14 @@ Plataforma SaaS multi-tenant para barberías. Los clientes finales la usan grati
 | 9 | **Sin pagos de servicios** | BarberOS nunca procesa el dinero de los cortes: el pago es entre cliente y barbero. La plataforma solo cobra la suscripción SaaS mensual. Precios de servicios = informativos. | [ADR-007](docs/adr/ADR-007-pagos-wompi.md) |
 | 10 | **Penalización por cancelación** | Recargo configurable por barbería (PenaltyPolicy/Record/History/Waiver) aplicado al precio mostrado de la siguiente reserva. Nunca es un cobro de plataforma. | [ADR-009](docs/adr/ADR-009-penalizaciones.md) |
 | 11 | **URLs: ruta pública por slug + panel único** | `barberos.com/{slug}` para clientes (SEO concentrado); `app.barberos.com` para el panel, con tenant por JWT y nunca por URL. Subdominios por tenant descartados. | [ADR-008](docs/adr/ADR-008-url-estrategia.md) |
+| 12 | **Gobernanza arquitectónica** | El arquitecto puede cuestionar requisitos ante riesgos o alternativas superiores; todo cambio estructural exige ADR previo con requisitos afectados y propagación a roadmap/modelo de datos. | [ADR-010](docs/adr/ADR-010-gobernanza-arquitectonica.md) |
+| 13 | **Política de No-Show** | Tolerancia, recargo incrementado sobre la mecánica de penalizaciones, bloqueo temporal/permanente de reservas y perdón manual — todo configurable por barbería y auditable. | [ADR-012](docs/adr/ADR-012-no-show.md) |
 
 ## Índice de documentación
 
 | Documento | Contenido |
 |-----------|-----------|
+| [00 — Checklist de cierre Fase 0](docs/00-fase0-checklist.md) | Estado de validación y aprobaciones pendientes |
 | [01 — Arquitectura](docs/01-arquitectura.md) | Estilo arquitectónico, capas, módulos, CQRS, DDD, eventos |
 | [02 — Multi-tenant](docs/02-multi-tenant.md) | Análisis comparativo A/B/C, decisión, resolución de tenant, aislamiento |
 | [03 — Modelo de datos](docs/03-modelo-datos.md) | Convenciones, ER, entidades, índices, estrategia de crecimiento |

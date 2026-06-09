@@ -70,6 +70,12 @@ erDiagram
     penalty_records ||--o{ penalty_history : audits
     penalty_records |o--o| penalty_waivers : forgiven_by
 
+    tenants ||--|| no_show_policies : configures
+    customers ||--o{ no_show_records : accumulates
+    appointments |o--|| no_show_records : originates
+    no_show_records |o--o| penalty_records : generates
+    no_show_records ||--o{ no_show_history : audits
+
     tenants ||--o{ notification_messages : sends
     tenants ||--o{ audit_logs : records
 ```
@@ -78,7 +84,7 @@ erDiagram
 
 ### Tenancy (plataforma)
 
-- **`tenants`** — `name`, `slug` (único, citext), `legal_name`, `tax_id (NIT)`, `country` (ISO-3166, default `CO`), `timezone`, `currency`, `status` (Trial | Active | Suspended | Churned), `branding` (jsonb: logo_url, colores), `settings` (jsonb).
+- **`tenants`** — `name`, `slug` (único, citext — namespace de la URL pública `barberos.com/{slug}`, ver [ADR-008](adr/ADR-008-url-estrategia.md)), `custom_domain` (único, nullable — feature Premium/Enterprise futura), `legal_name`, `tax_id (NIT)`, `country` (ISO-3166, default `CO`), `timezone`, `currency`, `status` (Trial | Active | Suspended | Churned), `branding` (jsonb: logo_url, colores), `settings` (jsonb).
 - **`branches`** — sucursales: `name`, `address`, `city`, `phone`, `geo (point, opcional)`, `is_main`.
 - **`plans`** (global, sin tenant) — `code` (Inicio | Profesional | Premium | Enterprise), `price_monthly`, `currency`, `limits` (jsonb: max_barbers, max_branches, features[]). Los límites se evalúan en Application contra este jsonb → agregar features no requiere migración.
 
@@ -117,6 +123,15 @@ erDiagram
 - **`penalty_waivers`** — perdón: `penalty_record_id` (único), `waived_by`, `reason` (obligatorio), `created_at`.
 
 Flujo canónico: cliente cancela cita confirmada de $40.000 COP dentro de la ventana → `PenaltyRecord(percentage=50, status=Active)` → su siguiente reserva muestra y registra $60.000 ( `base_price=40000`, `penalty_amount=20000`) → al completarse, el record pasa a `Consumed`. Solo una penalización activa se consume por reserva (la más antigua primero).
+
+### NoShow (submódulo de Booking — ver [ADR-012](adr/ADR-012-no-show.md))
+
+- **`no_show_policies`** — una por tenant: `is_enabled`, `tolerance_minutes` (default 15), `max_no_shows` (default 1), `evaluation_period_days` (default 90), `penalty_increment_percentage` (default 25), `temporary_block_days` (default 0 = sin bloqueo), `permanent_block_threshold` (nullable = desactivado), `allow_manual_waiver` (default true).
+- **`no_show_records`** — `customer_id`, `appointment_id` (único), `percentage_applied` (snapshot), `penalty_record_id` (nullable — el recargo generado), `status` (Active | Consumed | Waived | Expired), `recorded_by`.
+- **`no_show_history`** — append-only: `no_show_record_id`, `action` (Created | Consumed | Waived | Expired | BlockApplied | BlockLifted), `actor_id`, `details` (jsonb), `created_at`.
+- **`customers`** gana: `booking_blocked_until` (timestamptz nullable; valor lógico "infinito" = bloqueo permanente) y `booking_block_reason` — todo cambio de bloqueo queda trazado en `no_show_history`.
+
+El recargo de no-show reutiliza la mecánica de `penalty_records` (porcentaje de cancelación + `penalty_increment_percentage`, un solo recargo combinado por reserva), calculado por un único servicio de dominio de cotización.
 
 **Regla anti doble-reserva (a nivel de BD, no solo de aplicación):**
 
@@ -164,6 +179,7 @@ Requiere extensión `btree_gist`. Una condición de carrera entre dos requests c
 | appointments | `(tenant_id, branch_id, time_range)` | agenda por sucursal |
 | customers | `(tenant_id, phone)` único parcial | dedupe + búsqueda |
 | penalty_records | `(tenant_id, customer_id, status)` parcial `WHERE status = 'Active'` | lookup O(1) al cotizar una reserva |
+| no_show_records | `(tenant_id, customer_id, created_at DESC)`; único `(appointment_id)` | conteo en período móvil; una falta por cita |
 | refresh_tokens | `(token_hash)` único; `(family_id)` | validación O(1), revocación por familia |
 | outbox_messages | parcial `WHERE processed_at IS NULL` | polling barato del worker |
 | audit_logs | `(tenant_id, entity_type, entity_id, created_at DESC)` | trazabilidad |

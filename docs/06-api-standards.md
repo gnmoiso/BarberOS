@@ -17,7 +17,7 @@ Toda respuesta de error usa `application/problem+json`:
 
 ```json
 {
-  "type": "https://docs.barberos.app/errors/double-booking",
+  "type": "https://docs.barberos.com/errors/double-booking",
   "title": "The selected time slot is no longer available.",
   "status": 409,
   "detail": "Barber 'Carlos' already has an appointment from 10:00 to 10:45.",
@@ -45,7 +45,7 @@ Toda respuesta de error usa `application/problem+json`:
 
 ## 5. Idempotencia
 
-- Header `Idempotency-Key` (UUID del cliente) **obligatorio** en `POST` de reservas y de checkout de pagos; opcional en el resto de POST con efectos.
+- Header `Idempotency-Key` (UUID del cliente) **obligatorio** en `POST` de reservas y de checkout de suscripción SaaS (único flujo de pago de la plataforma); opcional en el resto de POST con efectos.
 - Semántica: misma key + mismo payload → se devuelve la respuesta original (almacenada 24h); misma key + payload distinto → `422 idempotency.key_reuse`.
 - Webhooks entrantes: idempotencia por `provider_event_id` persistido.
 
