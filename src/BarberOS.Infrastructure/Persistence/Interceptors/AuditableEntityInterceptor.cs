@@ -37,7 +37,7 @@ public sealed class AuditableEntityInterceptor(IDateTimeProvider clock, ICurrent
         var now = clock.UtcNow;
         var actor = currentUser.UserId;
 
-        foreach (var entry in context.ChangeTracker.Entries<BaseAuditableEntity>())
+        foreach (var entry in context.ChangeTracker.Entries<IAuditableEntity>())
         {
             switch (entry.State)
             {
