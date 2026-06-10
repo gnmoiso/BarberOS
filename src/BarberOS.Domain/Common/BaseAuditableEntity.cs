@@ -5,7 +5,7 @@ namespace BarberOS.Domain.Common;
 /// Audit fields are populated by an EF Core interceptor, never by hand.
 /// Soft delete only: rows are never physically removed.
 /// </summary>
-public abstract class BaseAuditableEntity : BaseEntity
+public abstract class BaseAuditableEntity : BaseEntity, IAuditableEntity
 {
     /// <summary>Tenant isolation key. Filled by tenancy infrastructure (Phase 3); platform-global entities override this convention explicitly.</summary>
     public Guid TenantId { get; set; }
