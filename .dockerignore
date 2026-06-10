@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.vs/
+**/.vscode/
+**/.idea/
+.git/
+docs/
+deploy/
+tests/
+*.md
+.env
+.env.*
