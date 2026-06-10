@@ -1,0 +1,48 @@
+# Development-only services. The API runs on the host (dotnet watch) against these.
+# Production topology is defined separately (docs/09-devops-cicd.md) — never reuse this file there.
+name: barberos-dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: barberos-dev-postgres
+    environment:
+      POSTGRES_DB: barberos
+      POSTGRES_USER: barberos
+      POSTGRES_PASSWORD: barberos_dev_only
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barberos -d barberos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: barberos-dev-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: barberos
+      MINIO_ROOT_PASSWORD: barberos_dev_only
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: barberos-dev-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+  minio_data:
