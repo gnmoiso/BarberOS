@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using BarberOS.API.Identity;
 using BarberOS.API.Middleware;
 using BarberOS.Application;
+using BarberOS.Application.Abstractions;
 using BarberOS.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
@@ -25,6 +27,12 @@ try
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
 
+    // Override NullCurrentUser with the real HTTP-context-aware implementation.
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, ClaimsCurrentUser>();
+
+    builder.Services.AddControllers();
+
     // RFC 7807 for every error response; traceId is always correlatable with logs
     // (docs/06-api-standards.md §3).
     builder.Services.AddProblemDetails(options =>
@@ -36,14 +44,15 @@ try
 
     var app = builder.Build();
 
-    app.UseExceptionHandler();
-    app.UseStatusCodePages();
-
+    app.UseMiddleware<ExceptionHandlerMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseSerilogRequestLogging();
 
+    app.UseAuthentication();
+    app.UseMiddleware<TenantResolutionMiddleware>();
+    app.UseAuthorization();
+
     // Liveness: process responds. Readiness: dependencies (PostgreSQL) reachable.
-    // Exposed only on the internal Docker network (docs/08-observabilidad.md §3).
     app.MapHealthChecks("/health/live", new HealthCheckOptions
     {
         Predicate = _ => false
@@ -52,6 +61,8 @@ try
     {
         Predicate = registration => registration.Tags.Contains("ready")
     });
+
+    app.MapControllers();
 
     app.Run();
 }

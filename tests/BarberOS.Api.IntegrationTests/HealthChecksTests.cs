@@ -39,8 +39,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     {
         // Real PostgreSQL (Testcontainers) arrives with the first persisted module;
         // the connection string only needs to be present for startup validation here.
-        builder.UseSetting("ConnectionStrings:Database",
-            "Host=localhost;Port=5432;Database=barberos_test;Username=test;Password=test");
+        // appsettings.Testing.json provides all required settings for startup validation.
         builder.UseEnvironment("Testing");
     }
 }
