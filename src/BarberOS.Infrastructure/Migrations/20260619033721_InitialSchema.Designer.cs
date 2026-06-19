@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BarberOS.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260619031805_BusinessModules")]
-    partial class BusinessModules
+    [Migration("20260619033721_InitialSchema")]
+    partial class InitialSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -366,7 +366,7 @@ namespace BarberOS.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasFilter("is_deleted = false");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("users", (string)null);
                 });
@@ -669,7 +669,7 @@ namespace BarberOS.Infrastructure.Migrations
 
                     b.HasIndex("Slug")
                         .IsUnique()
-                        .HasFilter("is_deleted = false");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("tenants", (string)null);
                 });

@@ -363,7 +363,7 @@ namespace BarberOS.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique()
-                        .HasFilter("is_deleted = false");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("users", (string)null);
                 });
@@ -666,7 +666,7 @@ namespace BarberOS.Infrastructure.Migrations
 
                     b.HasIndex("Slug")
                         .IsUnique()
-                        .HasFilter("is_deleted = false");
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("tenants", (string)null);
                 });

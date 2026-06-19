@@ -21,7 +21,7 @@ internal sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.Property(t => t.Currency).HasMaxLength(3).IsRequired();
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
 
-        builder.HasIndex(t => t.Slug).IsUnique().HasFilter("is_deleted = false");
+        builder.HasIndex(t => t.Slug).IsUnique().HasFilter("\"IsDeleted\" = false");
 
         builder.HasQueryFilter(t => !t.IsDeleted);
     }

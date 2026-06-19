@@ -18,7 +18,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.FullName).HasMaxLength(200).IsRequired();
         builder.Property(u => u.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
 
-        builder.HasIndex(u => u.Email).IsUnique().HasFilter("is_deleted = false");
+        builder.HasIndex(u => u.Email).IsUnique().HasFilter("\"IsDeleted\" = false");
 
         builder.HasMany(u => u.RefreshTokens)
             .WithOne()
