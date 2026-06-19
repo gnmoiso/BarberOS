@@ -1,5 +1,10 @@
 using BarberOS.Application.Abstractions;
+using BarberOS.Domain.Appointments;
+using BarberOS.Domain.Catalog;
+using BarberOS.Domain.Customers;
 using BarberOS.Domain.Identity;
+using BarberOS.Domain.Policies;
+using BarberOS.Domain.Staff;
 using BarberOS.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +23,13 @@ public sealed class AppDbContext(
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<UserTenantRole> UserTenantRoles => Set<UserTenantRole>();
+    public DbSet<Service> Services => Set<Service>();
+    public DbSet<Barber> Barbers => Set<Barber>();
+    public DbSet<WorkSchedule> WorkSchedules => Set<WorkSchedule>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<PenaltyPolicy> PenaltyPolicies => Set<PenaltyPolicy>();
+    public DbSet<NoShowPolicy> NoShowPolicies => Set<NoShowPolicy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

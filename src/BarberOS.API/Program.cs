@@ -33,6 +33,12 @@ try
 
     builder.Services.AddControllers();
 
+    builder.Services.AddCors(options =>
+        options.AddPolicy("Dev", policy =>
+            policy.WithOrigins("http://localhost:4200")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()));
+
     // RFC 7807 for every error response; traceId is always correlatable with logs
     // (docs/06-api-standards.md §3).
     builder.Services.AddProblemDetails(options =>
@@ -47,6 +53,8 @@ try
     app.UseMiddleware<ExceptionHandlerMiddleware>();
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseSerilogRequestLogging();
+
+    if (app.Environment.IsDevelopment()) app.UseCors("Dev");
 
     app.UseAuthentication();
     app.UseMiddleware<TenantResolutionMiddleware>();
