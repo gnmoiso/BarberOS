@@ -22,7 +22,7 @@ internal sealed class SetScheduleCommandHandler(
 
         foreach (var slot in cmd.Slots)
         {
-            var schedule = WorkSchedule.Create(tenantId, barber.Id, slot.Weekday, slot.StartTime, slot.EndTime);
+            var schedule = WorkSchedule.Create(tenantId, barber.Id, slot.Weekday, slot.StartTime, slot.EndTime, slot.BreakStart, slot.BreakEnd);
             barbers.AddSchedule(schedule);
         }
 

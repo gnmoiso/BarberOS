@@ -16,3 +16,6 @@ public sealed class ConflictException(string errorCode, string message)
 
 public sealed class ForbiddenException(string errorCode, string message)
     : DomainException(errorCode, message);
+
+public sealed class ValidationException(string errorCode, string message)
+    : DomainException(errorCode, message);

@@ -8,18 +8,25 @@ namespace BarberOS.Infrastructure.Repositories;
 internal sealed class AppointmentRepository(AppDbContext db) : IAppointmentRepository
 {
     public Task<Appointment?> FindByIdAsync(Guid id, CancellationToken ct) =>
-        db.Appointments.FirstOrDefaultAsync(a => a.Id == id, ct);
+        db.Appointments.Include(a => a.AddOns).FirstOrDefaultAsync(a => a.Id == id, ct);
 
     public async Task<IReadOnlyList<Appointment>> ListByDateRangeAsync(
         Guid tenantId, DateTimeOffset from, DateTimeOffset to, Guid? barberId, CancellationToken ct)
     {
-        var q = db.Appointments.Where(a => a.TenantId == tenantId && a.StartsAt >= from && a.StartsAt < to);
+        var q = db.Appointments.Include(a => a.AddOns)
+            .Where(a => a.TenantId == tenantId && a.StartsAt >= from && a.StartsAt < to);
         if (barberId.HasValue) q = q.Where(a => a.BarberId == barberId.Value);
         return await q.OrderBy(a => a.StartsAt).ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<Appointment>> ListByCustomerAsync(Guid customerId, int page, int size, CancellationToken ct) =>
-        await db.Appointments.Where(a => a.CustomerId == customerId)
+        await db.Appointments.Include(a => a.AddOns).Where(a => a.CustomerId == customerId)
+            .OrderByDescending(a => a.StartsAt)
+            .Skip((page - 1) * size).Take(size)
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Appointment>> ListByCustomerIdsAsync(IReadOnlyList<Guid> customerIds, int page, int size, CancellationToken ct) =>
+        await db.Appointments.Include(a => a.AddOns).Where(a => customerIds.Contains(a.CustomerId))
             .OrderByDescending(a => a.StartsAt)
             .Skip((page - 1) * size).Take(size)
             .ToListAsync(ct);
@@ -41,5 +48,10 @@ internal sealed class AppointmentRepository(AppDbContext db) : IAppointmentRepos
         await db.Appointments.CountAsync(
             a => a.TenantId == tenantId && a.CustomerId == customerId && a.Status == AppointmentStatus.NoShow, ct);
 
+    public Task<int> CountByTenantAsync(Guid tenantId, CancellationToken ct) =>
+        db.Appointments.CountAsync(a => a.TenantId == tenantId, ct);
+
     public void Add(Appointment appointment) => db.Appointments.Add(appointment);
+
+    public void AddAddOn(AppointmentAddOn addOn) => db.Set<AppointmentAddOn>().Add(addOn);
 }

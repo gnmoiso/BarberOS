@@ -9,6 +9,7 @@ internal sealed class ListAppointmentsQueryHandler(
     IAppointmentRepository appointments,
     ICustomerRepository customers,
     IBarberRepository barbers,
+    IRatingRepository ratings,
     ITenantProvider tenantProvider) : IQueryHandler<ListAppointmentsQuery, IReadOnlyList<AppointmentResponse>>
 {
     public async Task<IReadOnlyList<AppointmentResponse>> Handle(ListAppointmentsQuery query, CancellationToken ct)
@@ -16,13 +17,21 @@ internal sealed class ListAppointmentsQueryHandler(
         var tenantId = tenantProvider.TenantId!.Value;
         var list = await appointments.ListByDateRangeAsync(tenantId, query.From, query.To, query.BarberId, ct);
 
+        if (query.RestrictToCaller)
+        {
+            var ownCustomer = await customers.FindByUserIdAsync(tenantId, query.CallerUserId, ct);
+            list = ownCustomer is null ? [] : list.Where(a => a.CustomerId == ownCustomer.Id).ToList();
+        }
+
         var result = new List<AppointmentResponse>();
         foreach (var a in list)
         {
             var customer = await customers.FindByIdAsync(a.CustomerId, ct);
             var barber = await barbers.FindByIdAsync(a.BarberId, ct);
+            var isRated = a.Status == Domain.Appointments.AppointmentStatus.Completed
+                && await ratings.FindServiceRatingByAppointmentAsync(a.Id, ct) is not null;
             result.Add(BookAppointmentCommandHandler.ToResponse(
-                a, customer?.FullName ?? "Unknown", barber?.DisplayName ?? "Unknown"));
+                a, customer?.FullName ?? "Unknown", barber?.DisplayName ?? "Unknown", isRated));
         }
         return result;
     }

@@ -27,14 +27,15 @@ internal sealed class RegisterTenantCommandHandler(
         var passwordHash = hasher.Hash(cmd.OwnerPassword);
         var user = User.Create(cmd.OwnerEmail, cmd.OwnerFullName, passwordHash);
 
-        user.AddTenantRole(tenant.Id, Role.Owner);
+        user.AddTenantRole(tenant.Id, Role.Barber);
 
         tenants.Add(tenant);
         users.Add(user);
 
-        var accessToken = jwt.GenerateAccessToken(user.Id, tenant.Id, [Role.Owner.ToString()]);
+        var accessToken = jwt.GenerateAccessToken(user.Id, tenant.Id, [Role.Barber.ToString()]);
         var refreshResult = jwt.GenerateRefreshToken();
-        user.IssueRefreshToken(refreshResult.TokenHash, refreshResult.FamilyId, refreshResult.ExpiresAt, cmd.IpAddress);
+        var refreshToken = user.IssueRefreshToken(refreshResult.TokenHash, refreshResult.FamilyId, refreshResult.ExpiresAt, cmd.IpAddress);
+        users.AddRefreshToken(refreshToken);
 
         await uow.SaveChangesAsync(ct);
 

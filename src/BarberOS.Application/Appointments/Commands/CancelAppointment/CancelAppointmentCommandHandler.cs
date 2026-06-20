@@ -18,6 +18,23 @@ internal sealed class CancelAppointmentCommandHandler(
         var appointment = await appointments.FindByIdAsync(cmd.AppointmentId, ct)
             ?? throw new NotFoundException("APPOINTMENT_NOT_FOUND", $"Appointment {cmd.AppointmentId} not found.");
 
+        if (appointment.TenantId != cmd.CallerTenantId)
+            throw new NotFoundException("APPOINTMENT_NOT_FOUND", $"Appointment {cmd.AppointmentId} not found.");
+
+        // 23.14.2 — only the barbershop's own staff may cancel "as the barbershop" (no penalty,
+        // no questions asked); a customer may only cancel their own appointment, never someone else's.
+        if (cmd.CancelledByBarber)
+        {
+            if (!cmd.CallerIsBarber)
+                throw new ForbiddenException("CANCEL_FORBIDDEN", "Solo el dueño de la barbería o un barbero autorizado puede eliminar esta cita.");
+        }
+        else
+        {
+            var caller = await customers.FindByUserIdAsync(cmd.CallerTenantId, cmd.CallerUserId, ct);
+            if (caller is null || appointment.CustomerId != caller.Id)
+                throw new ForbiddenException("CANCEL_FORBIDDEN", "Solo puedes cancelar tus propias citas.");
+        }
+
         decimal? penalty = null;
         string? penaltyReason = null;
 

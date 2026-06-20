@@ -1,6 +1,7 @@
 using BarberOS.Application.Abstractions;
 using BarberOS.Application.Abstractions.Messaging;
 using BarberOS.Application.Abstractions.Repositories;
+using BarberOS.Domain.Common;
 using BarberOS.Domain.Staff;
 
 namespace BarberOS.Application.Staff.Commands.CreateBarber;
@@ -12,6 +13,8 @@ internal sealed class CreateBarberCommandHandler(
 {
     public async Task<BarberResponse> Handle(CreateBarberCommand cmd, CancellationToken ct)
     {
+        PhoneValidation.EnsureValidIfProvided(cmd.Phone);
+
         var tenantId = tenantProvider.TenantId!.Value;
         var barber = Barber.Create(tenantId, cmd.DisplayName, cmd.UserId, cmd.Phone);
         barbers.Add(barber);

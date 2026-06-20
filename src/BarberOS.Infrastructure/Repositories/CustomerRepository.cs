@@ -13,6 +13,9 @@ internal sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
     public Task<Customer?> FindByPhoneAsync(Guid tenantId, string phone, CancellationToken ct) =>
         db.Customers.FirstOrDefaultAsync(c => c.TenantId == tenantId && c.Phone == phone, ct);
 
+    public Task<Customer?> FindByUserIdAsync(Guid tenantId, Guid userId, CancellationToken ct) =>
+        db.Customers.FirstOrDefaultAsync(c => c.TenantId == tenantId && c.UserId == userId, ct);
+
     public async Task<IReadOnlyList<Customer>> SearchAsync(Guid tenantId, string? query, int page, int size, CancellationToken ct)
     {
         var q = db.Customers.Where(c => c.TenantId == tenantId);
@@ -30,6 +33,12 @@ internal sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
             q = q.Where(c => c.FullName.Contains(query) || c.Phone.Contains(query));
         return await q.CountAsync(ct);
     }
+
+    public Task<List<Customer>> ListByUserIdAcrossTenantsAsync(Guid userId, CancellationToken ct) =>
+        db.Customers.Where(c => c.UserId == userId).ToListAsync(ct);
+
+    public Task<List<string>> ListAllPhonesAsync(CancellationToken ct) =>
+        db.Customers.Select(c => c.Phone).ToListAsync(ct);
 
     public void Add(Customer customer) => db.Customers.Add(customer);
 }

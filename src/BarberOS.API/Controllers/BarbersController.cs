@@ -1,7 +1,9 @@
 using BarberOS.Application.Abstractions.Messaging;
 using BarberOS.Application.Staff.Commands.CreateBarber;
+using BarberOS.Application.Staff.Commands.DeleteBarber;
 using BarberOS.Application.Staff.Commands.SetSchedule;
 using BarberOS.Application.Staff.Commands.UpdateBarber;
+using BarberOS.Application.Staff.Queries.GetBarberSchedule;
 using BarberOS.Application.Staff.Queries.ListBarbers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,10 +35,21 @@ public sealed class BarbersController(ISender sender) : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("{id:guid}/schedule")]
+    public async Task<IActionResult> GetSchedule(Guid id, CancellationToken ct) =>
+        Ok(await sender.Send(new GetBarberScheduleQuery(id), ct));
+
     [HttpPut("{id:guid}/schedule")]
     public async Task<IActionResult> SetSchedule(Guid id, [FromBody] SetScheduleRequest req, CancellationToken ct)
     {
         await sender.Send(new SetScheduleCommand(id, req.Slots), ct);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        await sender.Send(new DeleteBarberCommand(id), ct);
         return NoContent();
     }
 }

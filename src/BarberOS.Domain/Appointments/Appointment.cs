@@ -4,7 +4,11 @@ namespace BarberOS.Domain.Appointments;
 
 public sealed class Appointment : BaseAuditableEntity
 {
+    private readonly List<AppointmentAddOn> addOns = [];
+
     private Appointment() { }
+
+    public IReadOnlyList<AppointmentAddOn> AddOns => addOns;
 
     public Guid CustomerId { get; private set; }
     public Guid BarberId { get; private set; }
@@ -47,6 +51,18 @@ public sealed class Appointment : BaseAuditableEntity
             Status = AppointmentStatus.Pending,
             Notes = notes?.Trim(),
         };
+    }
+
+    /// <summary>
+    /// Returns the new add-on so the caller explicitly adds it via the repository (db.Set&lt;AppointmentAddOn&gt;().Add(...)) —
+    /// mutating only the in-memory navigation collection on an already-tracked parent causes EF to misdetect it as
+    /// Modified instead of Added, throwing DbUpdateConcurrencyException on save.
+    /// </summary>
+    public AppointmentAddOn AddAddOn(string name, decimal price)
+    {
+        var addOn = AppointmentAddOn.Create(TenantId, Id, name, price);
+        addOns.Add(addOn);
+        return addOn;
     }
 
     public void Confirm() => TransitionTo(AppointmentStatus.Confirmed);

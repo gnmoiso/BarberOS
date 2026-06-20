@@ -27,14 +27,12 @@ public static class DependencyInjection
             throw new InvalidOperationException("Missing required configuration 'Jwt:Secret'.");
 
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
-
-        // ICurrentUser is registered as NullCurrentUser here.
-        // The API project overrides it with ClaimsCurrentUser (which reads IHttpContextAccessor).
         services.AddScoped<ICurrentUser, NullCurrentUser>();
-
         services.AddScoped<ITenantProvider, TenantProvider>();
         services.AddScoped<IPasswordHasher, Argon2PasswordHasher>();
         services.AddScoped<IJwtService, JwtService>();
+
+        // Existing repositories
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
         services.AddScoped<IServiceRepository, ServiceRepository>();
@@ -42,6 +40,15 @@ public static class DependencyInjection
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IPolicyRepository, PolicyRepository>();
+
+        // New repositories
+        services.AddScoped<IBarbershipLicenseRepository, BarbershipLicenseRepository>();
+        services.AddScoped<IInvitationCodeRepository, InvitationCodeRepository>();
+        services.AddScoped<ITestimonialRepository, TestimonialRepository>();
+        services.AddScoped<IPlatformSettingsRepository, PlatformSettingsRepository>();
+        services.AddScoped<IBarbershipSettingsRepository, BarbershipSettingsRepository>();
+        services.AddScoped<IRatingRepository, RatingRepository>();
+        services.AddScoped<IPostRepository, PostRepository>();
 
         services.AddScoped<AuditableEntityInterceptor>();
 
@@ -68,6 +75,20 @@ public static class DependencyInjection
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
                     ClockSkew = TimeSpan.FromSeconds(30),
+                };
+
+                // Browsers can't set an Authorization header on a WebSocket handshake, so SignalR's
+                // client sends the token as ?access_token=... instead — only honor that on hub paths.
+                opts.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                            context.Token = accessToken;
+                        return Task.CompletedTask;
+                    },
                 };
             });
 

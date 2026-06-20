@@ -13,6 +13,8 @@ internal sealed class CreateCustomerCommandHandler(
 {
     public async Task<CustomerResponse> Handle(CreateCustomerCommand cmd, CancellationToken ct)
     {
+        PhoneValidation.EnsureValid(cmd.Phone);
+
         var tenantId = tenantProvider.TenantId!.Value;
 
         var existing = await customers.FindByPhoneAsync(tenantId, cmd.Phone, ct);

@@ -12,6 +12,8 @@ internal sealed class UpdateBarberCommandHandler(
 {
     public async Task<BarberResponse> Handle(UpdateBarberCommand cmd, CancellationToken ct)
     {
+        PhoneValidation.EnsureValidIfProvided(cmd.Phone);
+
         var barber = await barbers.FindByIdAsync(cmd.Id, ct)
             ?? throw new NotFoundException("BARBER_NOT_FOUND", $"Barber {cmd.Id} not found.");
 

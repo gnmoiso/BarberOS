@@ -33,6 +33,7 @@ internal sealed class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<E
     {
         var status = ex switch
         {
+            ValidationException => StatusCodes.Status400BadRequest,
             NotFoundException => StatusCodes.Status404NotFound,
             UnauthorizedException => StatusCodes.Status401Unauthorized,
             ForbiddenException => StatusCodes.Status403Forbidden,

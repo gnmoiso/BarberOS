@@ -2,8 +2,7 @@ namespace BarberOS.Domain.Identity;
 
 public enum Role
 {
-    Owner,
-    Admin,
-    Barber,
-    Receptionist,
+    SuperAdmin = 1,
+    Barber = 2,
+    Customer = 3,
 }

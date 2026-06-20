@@ -20,5 +20,12 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasIndex(a => new { a.TenantId, a.BarberId, a.StartsAt });
         builder.HasIndex(a => new { a.TenantId, a.CustomerId });
         builder.HasQueryFilter(a => !a.IsDeleted);
+
+        builder.HasMany(a => a.AddOns)
+            .WithOne()
+            .HasForeignKey(ao => ao.AppointmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(a => a.AddOns).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

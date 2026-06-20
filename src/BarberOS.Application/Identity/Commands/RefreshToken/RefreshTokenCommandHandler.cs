@@ -37,7 +37,8 @@ internal sealed class RefreshTokenCommandHandler(
         var accessToken = jwt.GenerateAccessToken(user.Id, tenantId, roles);
         var newRefresh = jwt.RotateRefreshToken(token.FamilyId);
 
-        user.IssueRefreshToken(newRefresh.TokenHash, newRefresh.FamilyId, newRefresh.ExpiresAt, cmd.IpAddress);
+        var newToken = user.IssueRefreshToken(newRefresh.TokenHash, newRefresh.FamilyId, newRefresh.ExpiresAt, cmd.IpAddress);
+        users.AddRefreshToken(newToken);
 
         await uow.SaveChangesAsync(ct);
 

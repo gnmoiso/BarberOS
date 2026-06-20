@@ -5,7 +5,7 @@ namespace BarberOS.Application.Identity.Commands.Login;
 public sealed record LoginCommand(
     string Email,
     string Password,
-    Guid TenantId,
+    Guid? TenantId,
     string IpAddress) : ICommand<LoginResponse>;
 
 public sealed record LoginResponse(
@@ -15,4 +15,7 @@ public sealed record LoginResponse(
     Guid UserId,
     string FullName,
     string Email,
-    string Role);
+    string Role,
+    Guid? TenantId,
+    string? TenantSlug,
+    bool LicensePending);
