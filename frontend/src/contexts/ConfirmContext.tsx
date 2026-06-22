@@ -16,7 +16,7 @@ const ConfirmContext = createContext<ConfirmFn | null>(null)
  * dice" browser chrome) with a modal visually consistent with the rest of BarberOS. */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<{ message: string; options: ConfirmOptions } | null>(null)
-  const resolver = useRef<(value: boolean) => void>()
+  const resolver = useRef<((value: boolean) => void) | undefined>(undefined)
 
   const confirm = useCallback<ConfirmFn>((message, options = {}) => {
     setState({ message, options })

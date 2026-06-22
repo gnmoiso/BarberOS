@@ -422,7 +422,7 @@ export default function PostsPage() {
   }
 
   // 23.20.11 — arrastrar y soltar, además del selector de archivos por clic.
-  function handleImageDrop(e: React.DragEvent<HTMLDivElement>) {
+  function handleImageDrop(e: React.DragEvent<HTMLButtonElement>) {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
     if (file) uploadPostImage(file)
