@@ -36,6 +36,10 @@ internal sealed class BookAppointmentCommandHandler(
         if (cmd.CustomerUserId is null)
             await EnsureWithinBookingWindowAsync(tenantId, cmd.CallerUserId, cmd.StartsAt, ct);
 
+        // 23.19 — a slot that already started, or that doesn't leave the barbershop's configured
+        // minimum lead time, can never be booked — for anyone, customer or barber-assisted.
+        await EnsureNotPastOrTooSoonAsync(tenantId, cmd.StartsAt, ct);
+
         // 23.13.1/23.13.2/23.13.8/23.16.4/23.16.5 — a customer may only have ONE active appointment
         // across EVERY barbershop they belong to (not just this one), and must rate every completed
         // service before booking another, anywhere. Checked across all of the user's CRM Customer
@@ -91,6 +95,16 @@ internal sealed class BookAppointmentCommandHandler(
         if (requestedDate < minDate)
             throw new ConflictException("BOOKING_WINDOW_VIOLATION",
                 $"Esta barbería requiere reservar con al menos {daysAhead} día(s) de anticipación. Primera fecha disponible: {minDate:dd/MM/yyyy}.");
+    }
+
+    private async Task EnsureNotPastOrTooSoonAsync(Guid tenantId, DateTimeOffset startsAt, CancellationToken ct)
+    {
+        var tenantSettings = await settings.GetByTenantAsync(tenantId, ct);
+        var minLeadMinutes = tenantSettings?.MinLeadMinutes ?? 30;
+        var earliestStart = DateTimeOffset.UtcNow.AddMinutes(minLeadMinutes);
+
+        if (startsAt < earliestStart)
+            throw new ValidationException("BOOKING_TIME_PASSED", "No puedes reservar una cita en un horario que ya ha pasado.");
     }
 
     private static TimeZoneInfo ResolveTimeZone(string? ianaId)

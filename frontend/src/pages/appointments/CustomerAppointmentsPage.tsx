@@ -39,6 +39,8 @@ function BookingModal({ minBookableDate, onClose, onBooked }: { minBookableDate:
   const [switchingTenant, setSwitchingTenant] = useState(false)
   const [activeTenantId, setActiveTenantId] = useState(user?.tenantId ?? '')
   const [resolvedMinBookableDate, setResolvedMinBookableDate] = useState(minBookableDate)
+  const [minLeadMinutes, setMinLeadMinutes] = useState(30)
+  const [daysAheadNormalUser, setDaysAheadNormalUser] = useState(0)
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [services, setServices] = useState<Service[]>([])
   const [addons, setAddons] = useState<AddonPrices>({})
@@ -77,6 +79,8 @@ function BookingModal({ minBookableDate, onClose, onBooked }: { minBookableDate:
       setBarbers(b.filter((x: Barber) => x.isActive))
       setServices(s)
       setAddons({ beardPrice: settings?.beardPrice, eyebrowPrice: settings?.eyebrowPrice, washPrice: settings?.washPrice })
+      setMinLeadMinutes(settings?.minLeadMinutes ?? 30)
+      setDaysAheadNormalUser(settings?.daysAheadNormalUser ?? 0)
       if (elig) {
         setResolvedMinBookableDate(elig.minBookableDate)
         setDate(prev => (prev < elig.minBookableDate ? elig.minBookableDate : prev))
@@ -111,6 +115,17 @@ function BookingModal({ minBookableDate, onClose, onBooked }: { minBookableDate:
     (extras.eyebrow ? addons.eyebrowPrice ?? 0 : 0) +
     (extras.wash ? addons.washPrice ?? 0 : 0)
   const total = (selectedService?.price ?? 0) + extrasTotal
+
+  // 23.19.3 — never show just an empty list; tell the customer exactly why there's nothing to pick.
+  function emptySlotsReason(): string {
+    if (date < resolvedMinBookableDate) {
+      return `Debes esperar ${daysAheadNormalUser} día(s) para reservar. Primera fecha disponible: ${new Date(resolvedMinBookableDate + 'T12:00:00').toLocaleDateString('es-CO')}.`
+    }
+    if (date === toDateString(new Date())) {
+      return `Debes reservar con al menos ${minLeadMinutes} minutos de anticipación, y ya no quedan horarios disponibles hoy dentro de ese margen.`
+    }
+    return 'No hay horarios disponibles para esta fecha (fuera del horario laboral o ya reservados). Vuelve al paso anterior y elige otro día.'
+  }
 
   function stepIndex(s: Step) { return STEPS.indexOf(s) }
   function goNext() { setStep(STEPS[stepIndex(step) + 1]) }
@@ -231,7 +246,7 @@ function BookingModal({ minBookableDate, onClose, onBooked }: { minBookableDate:
               {slotsLoading ? (
                 <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" /></div>
               ) : slots.length === 0 ? (
-                <p className="text-zinc-500 text-sm py-4 text-center">No hay horarios disponibles para esta fecha. Vuelve al paso anterior y elige otro día.</p>
+                <p className="text-zinc-500 text-sm py-4 text-center">{emptySlotsReason()}</p>
               ) : (
                 <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
                   {slots.map(s => (

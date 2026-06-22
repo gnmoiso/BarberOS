@@ -17,7 +17,9 @@ internal sealed class BarbershipSettingsConfiguration : IEntityTypeConfiguration
         builder.Property(s => s.WashPrice).HasPrecision(10, 2);
         builder.Property(s => s.Address).HasMaxLength(500);
         builder.Property(s => s.OwnerName).HasMaxLength(200);
+        builder.Property(s => s.LogoUrl).HasMaxLength(500);
         builder.Property(s => s.ReminderMinutesBeforeAppointment).HasDefaultValue(20);
+        builder.Property(s => s.MinLeadMinutes).HasDefaultValue(30);
         builder.HasIndex(s => s.TenantId).IsUnique();
         builder.HasQueryFilter(s => !s.IsDeleted);
     }

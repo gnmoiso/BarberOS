@@ -5,6 +5,7 @@ import { api } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { authService } from '@/services/auth.service'
 import { useRealtimeAppointments, usePostsRealtime } from '@/hooks/useRealtimeAppointments'
+import { StatCard } from '@/components/ui/StatCard'
 import type { MyTenant } from '@/types'
 
 interface AppointmentItem {
@@ -14,20 +15,6 @@ interface AppointmentItem {
   startsAt: string
   status: string
   isRated: boolean
-}
-
-function StatCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: string | number; accent: string }) {
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div>
-        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">{label}</p>
-        <p className="text-white text-2xl font-black mt-0.5">{value}</p>
-      </div>
-    </div>
-  )
 }
 
 function RatingModal({ appointment, onClose, onRated }: { appointment: AppointmentItem; onClose: () => void; onRated: () => void }) {
@@ -191,7 +178,7 @@ export default function CustomerDashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <StatCard icon={CheckCircle2} label="Asistidas" value={attended} accent="bg-green-500/10 text-green-400" />
         <StatCard icon={XCircle} label="Perdidas" value={missed} accent="bg-orange-500/10 text-orange-400" />
         <StatCard icon={Building2} label="Barberías" value={tenants.length} accent="bg-blue-500/10 text-blue-400" />

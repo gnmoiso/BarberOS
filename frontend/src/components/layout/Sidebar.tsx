@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Scissors, Users, Calendar, LogOut, UserCheck, Key, Newspaper, Settings, KeyRound, UserCircle,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useBrandLogo } from '@/hooks/useBrandLogo'
 
 const barberNav = [
   { to: '/barberia/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -28,6 +29,7 @@ const customerNav = [
 export function Sidebar() {
   const { user, logout } = useAuth()
   const nav = user?.role === 'Barber' ? barberNav : customerNav
+  const logoUrl = useBrandLogo()
 
   return (
     <motion.aside
@@ -36,14 +38,18 @@ export function Sidebar() {
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Logo */}
+      {/* Logo — barbero: su propio logo si lo subió, si no el de BarberOS; cliente: siempre el de BarberOS */}
       <div className="flex items-center gap-2.5 px-6 py-5 border-b border-zinc-800">
-        <div className="w-9 h-9 rounded-xl overflow-hidden flex shrink-0 shadow-lg shadow-black/40">
-          <div className="w-1/2 bg-red-600 flex items-center justify-center">
-            <Scissors size={16} className="text-white" style={{ marginRight: -8 }} />
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-xl object-cover shrink-0 shadow-lg shadow-black/40" />
+        ) : (
+          <div className="w-9 h-9 rounded-xl overflow-hidden flex shrink-0 shadow-lg shadow-black/40">
+            <div className="w-1/2 bg-red-600 flex items-center justify-center">
+              <Scissors size={16} className="text-white" style={{ marginRight: -8 }} />
+            </div>
+            <div className="w-1/2 bg-blue-600" />
           </div>
-          <div className="w-1/2 bg-blue-600" />
-        </div>
+        )}
         <span className="font-black text-xl text-white">Barber<span className="text-red-600">OS</span></span>
       </div>
 

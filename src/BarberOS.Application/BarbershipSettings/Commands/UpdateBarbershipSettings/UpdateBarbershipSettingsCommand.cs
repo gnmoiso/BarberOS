@@ -12,4 +12,5 @@ public sealed record UpdateBarbershipSettingsCommand(
     decimal? WashPrice,
     string? Address,
     string? OwnerName,
-    int? ReminderMinutesBeforeAppointment) : ICommand;
+    int? ReminderMinutesBeforeAppointment,
+    int? MinLeadMinutes = null) : ICommand;

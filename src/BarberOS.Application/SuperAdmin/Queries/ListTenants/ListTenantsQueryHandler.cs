@@ -11,6 +11,7 @@ internal sealed class ListTenantsQueryHandler(
     IInvitationCodeRepository invitationCodes,
     IAppointmentRepository appointments,
     IRatingRepository ratings,
+    IBarbershipSettingsRepository settings,
     IDateTimeProvider clock) : IQueryHandler<ListTenantsQuery, List<TenantSummaryDto>>
 {
     public async Task<List<TenantSummaryDto>> Handle(ListTenantsQuery query, CancellationToken ct)
@@ -34,6 +35,7 @@ internal sealed class ListTenantsQueryHandler(
             var appointmentCount = await appointments.CountByTenantAsync(tenant.Id, ct);
             var avgRating = await ratings.GetBarbershopAverageStarsAsync(tenant.Id, ct);
             var ratingCount = await ratings.GetBarbershopRatingCountAsync(tenant.Id, ct);
+            var tenantSettings = await settings.GetByTenantAsync(tenant.Id, ct);
 
             result.Add(new TenantSummaryDto(
                 tenant.Id,
@@ -53,7 +55,8 @@ internal sealed class ListTenantsQueryHandler(
                 activeCode,
                 appointmentCount,
                 avgRating,
-                ratingCount));
+                ratingCount,
+                tenantSettings?.LogoUrl));
         }
 
         return result;

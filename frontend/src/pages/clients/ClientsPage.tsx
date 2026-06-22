@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Star, Percent, Trash2, Users, Search, AlertTriangle } from 'lucide-react'
 import { api } from '@/services/api'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 interface Client {
   id: string
@@ -14,6 +15,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
+  const confirmDialog = useConfirm()
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
@@ -50,7 +52,7 @@ export default function ClientsPage() {
   }
 
   async function removeClient(client: Client) {
-    if (!confirm(`Eliminar a ${client.fullName} de tu barberia? Esta accion no se puede deshacer.`)) return
+    if (!await confirmDialog(`Eliminar a ${client.fullName} de tu barberia? Esta accion no se puede deshacer.`)) return
     await api.delete(`/clients/${client.userId}`)
     load()
   }

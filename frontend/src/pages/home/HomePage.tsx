@@ -29,7 +29,17 @@ const stats = [
   { value: '24/7', label: 'Disponible siempre' },
 ]
 
-function Logo({ size = 9 }: { size?: number }) {
+function Logo({ size = 9, logoUrl }: { size?: number; logoUrl?: string | null }) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt="Logo"
+        className="rounded-xl overflow-hidden shrink-0 shadow-lg shadow-black/40 object-cover"
+        style={{ width: size * 4, height: size * 4 }}
+      />
+    )
+  }
   return (
     <div className="rounded-xl overflow-hidden flex shrink-0 shadow-lg shadow-black/40" style={{ width: size * 4, height: size * 4 }}>
       <div className="w-1/2 bg-red-600 flex items-center justify-center">
@@ -42,9 +52,11 @@ function Logo({ size = 9 }: { size?: number }) {
 
 export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [platformLogoUrl, setPlatformLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     api.get('/testimonials/home').then(r => setTestimonials(r.data)).catch(() => {})
+    api.get('/public/platform-settings').then(r => setPlatformLogoUrl(r.data?.logoUrl ?? null)).catch(() => {})
   }, [])
 
   return (
@@ -54,21 +66,21 @@ export default function HomePage() {
 
       {/* Nav */}
       <nav className="fixed top-[3px] w-full z-50 bg-[#0A0A0A]/85 backdrop-blur-md border-b border-zinc-800/60">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Logo size={9} />
-            <span className="font-black text-xl tracking-tight">Barber<span className="text-red-600">OS</span></span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
+            <Logo size={9} logoUrl={platformLogoUrl} />
+            <span className="font-black text-lg sm:text-xl tracking-tight whitespace-nowrap">Barber<span className="text-red-600">OS</span></span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
             <a href="#features" className="hover:text-white transition-colors">Características</a>
             <a href="#how" className="hover:text-white transition-colors">Cómo funciona</a>
             <a href="#testimonials" className="hover:text-white transition-colors">Testimonios</a>
           </div>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Link to="/login" className="hidden sm:inline-block text-zinc-400 hover:text-white text-sm font-medium transition-colors whitespace-nowrap">
               Iniciar sesión
             </Link>
-            <Link to="/register" className="bg-red-600 hover:bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors shadow-lg shadow-red-600/20">
+            <Link to="/register" className="bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl transition-colors shadow-lg shadow-red-600/20 whitespace-nowrap">
               Empezar gratis
             </Link>
           </div>
@@ -296,7 +308,7 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto text-center relative overflow-hidden rounded-[2rem] p-14 bg-gradient-to-br from-red-700 via-zinc-900 to-blue-700">
           <div className="absolute inset-0 bg-[#0A0A0A]/70" />
           <div className="relative">
-            <Logo size={14} />
+            <Logo size={14} logoUrl={platformLogoUrl} />
             <h2 className="text-4xl font-black mb-4 mt-6">
               ¿Listo para transformar<br />tu barbería?
             </h2>
@@ -326,7 +338,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <Logo size={8} />
+              <Logo size={8} logoUrl={platformLogoUrl} />
               <span className="font-black text-lg">Barber<span className="text-red-600">OS</span></span>
             </div>
             <p className="text-zinc-500 text-sm max-w-xs leading-relaxed">

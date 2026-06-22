@@ -206,6 +206,15 @@ namespace BarberOS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("MinLeadMinutes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(30);
+
                     b.Property<string>("OwnerName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -330,6 +339,14 @@ namespace BarberOS.Infrastructure.Migrations
 
                     b.Property<bool>("ShowOnLogin")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("ShowOnRegister")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid");

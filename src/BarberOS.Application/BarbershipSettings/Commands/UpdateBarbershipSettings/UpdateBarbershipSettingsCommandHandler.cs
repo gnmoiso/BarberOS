@@ -19,7 +19,7 @@ internal sealed class UpdateBarbershipSettingsCommandHandler(
         }
 
         s.UpdateGeneral(cmd.DaysAheadNormalUser, cmd.BasePriceNoService, cmd.Currency,
-            cmd.BeardPrice, cmd.EyebrowPrice, cmd.WashPrice, cmd.ReminderMinutesBeforeAppointment);
+            cmd.BeardPrice, cmd.EyebrowPrice, cmd.WashPrice, cmd.ReminderMinutesBeforeAppointment, cmd.MinLeadMinutes);
         s.UpdateProfile(cmd.Address, cmd.OwnerName);
 
         await uow.SaveChangesAsync(ct);

@@ -7,13 +7,38 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Secrets (never commit)
+# .NET
+**/bin/
+**/obj/
+
+# Logs
+*.log
+logs/
+.runlogs/
+src/.runlogs/
+
+# Node
+node_modules/
+dist/
+
+# Env
 .env
 .env.*
 !.env.example
 
-# Future build artifacts (Phase 1+)
-bin/
-obj/
-node_modules/
-dist/
+# Uploads
+src/BarberOS.API/wwwroot/uploads/*
+!src/BarberOS.API/wwwroot/uploads/.gitkeep
+
+# Coverage
+coverage/
+
+# Test Results
+TestResults/
+
+# Rider
+*.sln.iml
+
+# EF
+*.db
+*.sqlite

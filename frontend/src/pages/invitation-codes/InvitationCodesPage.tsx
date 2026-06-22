@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Copy, Plus, Trash2, Key, CheckCircle, XCircle } from 'lucide-react'
 import { api } from '@/services/api'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 interface InvitationCode {
   id: string
@@ -11,6 +12,7 @@ interface InvitationCode {
 }
 
 export default function InvitationCodesPage() {
+  const confirmDialog = useConfirm()
   const [codes, setCodes] = useState<InvitationCode[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -43,7 +45,7 @@ export default function InvitationCodesPage() {
   }
 
   async function deactivate(id: string) {
-    if (!confirm('Desactivar este codigo de invitacion?')) return
+    if (!await confirmDialog('Desactivar este codigo de invitacion?', { confirmLabel: 'Desactivar' })) return
     await api.delete(`/invitation-codes/${id}`)
     load()
   }

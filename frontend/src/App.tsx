@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ConfirmProvider } from '@/contexts/ConfirmContext'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { RequireAuth, RequireGuest, RequireLicense } from '@/components/shared/RouteGuard'
 import { PageSpinner } from '@/components/ui/Spinner'
+import { useFavicon } from '@/hooks/useFavicon'
 
 const HomePage = lazy(() => import('@/pages/home/HomePage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
@@ -31,9 +33,11 @@ const Fallback = (
 )
 
 export default function App() {
+  useFavicon()
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ConfirmProvider>
         <Suspense fallback={Fallback}>
           <Routes>
             {/* Públicas */}
@@ -77,6 +81,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        </ConfirmProvider>
       </AuthProvider>
     </BrowserRouter>
   )

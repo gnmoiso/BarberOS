@@ -15,4 +15,8 @@ public sealed class TestimonialsController(ISender sender) : ControllerBase
     [HttpGet("login")]
     public async Task<IActionResult> ForLogin(CancellationToken ct) =>
         Ok(await sender.Send(new ListTestimonialsQuery(ShowOnLoginOnly: true), ct));
+
+    [HttpGet("register")]
+    public async Task<IActionResult> ForRegister(CancellationToken ct) =>
+        Ok(await sender.Send(new ListTestimonialsQuery(ShowOnRegisterOnly: true), ct));
 }

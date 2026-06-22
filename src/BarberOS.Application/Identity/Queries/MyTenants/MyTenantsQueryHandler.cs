@@ -6,7 +6,8 @@ namespace BarberOS.Application.Identity.Queries.MyTenants;
 
 internal sealed class MyTenantsQueryHandler(
     IUserRepository users,
-    ITenantRepository tenants) : IQueryHandler<MyTenantsQuery, List<MyTenantDto>>
+    ITenantRepository tenants,
+    IBarbershipSettingsRepository settings) : IQueryHandler<MyTenantsQuery, List<MyTenantDto>>
 {
     public async Task<List<MyTenantDto>> Handle(MyTenantsQuery query, CancellationToken ct)
     {
@@ -18,11 +19,14 @@ internal sealed class MyTenantsQueryHandler(
         var tenantList = await tenants.ListByIdsAsync(user.TenantRoles.Select(r => r.TenantId), ct);
         var tenantMap = tenantList.ToDictionary(t => t.Id);
 
-        return user.TenantRoles
-            .Where(r => tenantMap.ContainsKey(r.TenantId))
-            .Select(r => new MyTenantDto(
-                r.TenantId, tenantMap[r.TenantId].Name, tenantMap[r.TenantId].Slug, r.Role.ToString(),
-                tenantMap[r.TenantId].Status.ToString()))
-            .ToList();
+        var result = new List<MyTenantDto>();
+        foreach (var r in user.TenantRoles)
+        {
+            if (!tenantMap.TryGetValue(r.TenantId, out var tenant)) continue;
+            var tenantSettings = await settings.GetByTenantAsync(r.TenantId, ct);
+            result.Add(new MyTenantDto(r.TenantId, tenant.Name, tenant.Slug, r.Role.ToString(),
+                tenant.Status.ToString(), tenantSettings?.LogoUrl));
+        }
+        return result;
     }
 }

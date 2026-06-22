@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import { formatCOP } from '@/utils/currency'
 import type { Service, CreateServiceRequest } from '@/types'
 
@@ -16,6 +17,7 @@ const empty: CreateServiceRequest = {
 }
 
 export default function ServicesPage() {
+  const confirmDialog = useConfirm()
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -55,7 +57,7 @@ export default function ServicesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este servicio?')) return
+    if (!await confirmDialog('¿Eliminar este servicio?')) return
     await servicesService.remove(id).catch(() => {})
     load()
   }

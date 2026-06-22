@@ -6,6 +6,18 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications, scheduleAppointmentReminder } from '@/hooks/useNotifications'
 import { useRealtimeAppointments, isNotificationSoundEnabled, setNotificationSoundEnabled } from '@/hooks/useRealtimeAppointments'
 import { formatCOP } from '@/utils/currency'
+import { StatCard } from '@/components/ui/StatCard'
+
+// 23.20.12 — el barbero decide si los ingresos del día se muestran u ocultan en el dashboard,
+// ya que es información financiera sensible que puede estar visible para terceros (clientes,
+// otros empleados) mirando la pantalla. Preferencia persistida por navegador, igual que el sonido.
+const INCOME_VISIBLE_KEY = 'bos_income_visible'
+function isIncomeVisible(): boolean {
+  return localStorage.getItem(INCOME_VISIBLE_KEY) !== 'off'
+}
+function setIncomeVisible(visible: boolean) {
+  localStorage.setItem(INCOME_VISIBLE_KEY, visible ? 'on' : 'off')
+}
 
 interface AppointmentItem {
   id: string
@@ -16,19 +28,6 @@ interface AppointmentItem {
   status: string
 }
 
-function StatCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: string | number; accent: string }) {
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <div>
-        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">{label}</p>
-        <p className="text-white text-2xl font-black mt-0.5">{value}</p>
-      </div>
-    </div>
-  )
-}
 
 function QuickLink({ to, icon: Icon, label }: { to: string; icon: any; label: string }) {
   return (
@@ -49,6 +48,7 @@ export default function BarberDashboardPage() {
   const [reminderMinutes, setReminderMinutes] = useState(20)
   const [loading, setLoading] = useState(true)
   const [soundOn, setSoundOn] = useState(isNotificationSoundEnabled())
+  const [incomeVisible, setIncomeVisibleState] = useState(isIncomeVisible())
   const [justUpdated, setJustUpdated] = useState(false)
 
   useEffect(() => { load() }, [])
@@ -58,6 +58,12 @@ export default function BarberDashboardPage() {
     setJustUpdated(true)
     setTimeout(() => setJustUpdated(false), 4000)
   })
+
+  function toggleIncomeVisible() {
+    const next = !incomeVisible
+    setIncomeVisibleState(next)
+    setIncomeVisible(next)
+  }
 
   function toggleSound() {
     const next = !soundOn
@@ -135,10 +141,17 @@ export default function BarberDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <StatCard icon={Calendar} label="Citas hoy" value={appointments.length} accent="bg-red-600/10 text-red-500" />
         <StatCard icon={Clock} label="Pendientes" value={pending.length} accent="bg-blue-500/10 text-blue-400" />
-        <StatCard icon={DollarSign} label="Ingresos del día" value={`$${formatCOP(estimatedIncome)}`} accent="bg-green-500/10 text-green-400" />
+        <StatCard
+          icon={DollarSign}
+          label="Ingresos del día"
+          value={`$${formatCOP(estimatedIncome)}`}
+          accent="bg-green-500/10 text-green-400"
+          visible={incomeVisible}
+          onToggleVisibility={toggleIncomeVisible}
+        />
         <StatCard icon={Star} label="Valoración" value={rating?.count ? `${rating.averageStars.toFixed(1)} ★` : '—'} accent="bg-purple-500/10 text-purple-400" />
       </div>
 

@@ -3,6 +3,8 @@ using BarberOS.Application.SuperAdmin.Commands.ExtendLicense;
 using BarberOS.Application.SuperAdmin.Commands.GenerateLicense;
 using BarberOS.Application.SuperAdmin.Commands.ResetUserPassword;
 using BarberOS.Application.SuperAdmin.Commands.SetTestimonialVisibility;
+using BarberOS.Application.SuperAdmin.Commands.ApproveTestimonial;
+using BarberOS.Application.SuperAdmin.Commands.RejectTestimonial;
 using BarberOS.Application.SuperAdmin.Commands.UpdatePlatformLogo;
 using BarberOS.Application.SuperAdmin.Commands.UpdatePlatformSettings;
 using BarberOS.Application.SuperAdmin.Queries.GetPlatformSettings;
@@ -139,7 +141,21 @@ public sealed class SuperAdminController(ISender sender, IHubContext<Appointment
     [HttpPut("testimonials/{id:guid}/visibility")]
     public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest req, CancellationToken ct)
     {
-        await sender.Send(new SetTestimonialVisibilityCommand(id, req.ShowOnHome, req.ShowOnLogin), ct);
+        await sender.Send(new SetTestimonialVisibilityCommand(id, req.ShowOnHome, req.ShowOnLogin, req.ShowOnRegister), ct);
+        return NoContent();
+    }
+
+    [HttpPost("testimonials/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveTestimonial(Guid id, CancellationToken ct)
+    {
+        await sender.Send(new ApproveTestimonialCommand(id), ct);
+        return NoContent();
+    }
+
+    [HttpPost("testimonials/{id:guid}/reject")]
+    public async Task<IActionResult> RejectTestimonial(Guid id, CancellationToken ct)
+    {
+        await sender.Send(new RejectTestimonialCommand(id), ct);
         return NoContent();
     }
 }
@@ -148,7 +164,7 @@ public sealed record GenerateLicenseRequest(DateTimeOffset ExpiresAt, string? No
 public sealed record ExtendLicenseRequest(DateTimeOffset NewExpiresAt);
 public sealed record UpdatePlatformSettingsRequest(string? ContactPhone, string? ContactEmail,
     string? ContactWhatsApp, string? ContactMessage);
-public sealed record SetVisibilityRequest(bool ShowOnHome, bool ShowOnLogin);
+public sealed record SetVisibilityRequest(bool ShowOnHome, bool ShowOnLogin, bool ShowOnRegister);
 public sealed record SuperAdminReactRequest(ReactionType Type);
 public sealed record SuperAdminCommentRequest(string Text, Guid? ParentCommentId);
 public sealed record ResetUserPasswordRequest(string NewPassword);

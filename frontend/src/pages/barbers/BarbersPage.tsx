@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import type { Barber, CreateBarberRequest, WorkSchedule } from '@/types'
 
 const empty: CreateBarberRequest = { displayName: '', phone: '' }
@@ -37,6 +38,7 @@ function emptyDaySlot(): DaySlot {
 }
 
 export default function BarbersPage() {
+  const confirmDialog = useConfirm()
   const [barbers, setBarbers] = useState<Barber[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -90,7 +92,7 @@ export default function BarbersPage() {
   }
 
   async function removeBarber(b: Barber) {
-    if (!confirm(`Eliminar a ${b.displayName} del equipo? Esta acción no se puede deshacer.`)) return
+    if (!await confirmDialog(`Eliminar a ${b.displayName} del equipo? Esta acción no se puede deshacer.`)) return
     await barbersService.remove(b.id)
     load()
   }

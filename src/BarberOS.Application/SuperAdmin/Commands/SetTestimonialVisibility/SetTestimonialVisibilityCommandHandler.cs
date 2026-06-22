@@ -14,7 +14,7 @@ internal sealed class SetTestimonialVisibilityCommandHandler(
         var t = await testimonials.FindByIdAsync(cmd.TestimonialId, ct)
             ?? throw new NotFoundException("testimonial.not_found", "Testimonio no encontrado.");
 
-        t.SetVisibility(cmd.ShowOnHome, cmd.ShowOnLogin);
+        t.SetVisibility(cmd.ShowOnHome, cmd.ShowOnLogin, cmd.ShowOnRegister);
         await uow.SaveChangesAsync(ct);
         return default;
     }

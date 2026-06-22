@@ -3,6 +3,7 @@ import { Heart, Smile, ThumbsUp, MessageCircle, Send, Image, Scissors, ChevronDo
 import { api } from '@/services/api'
 import { uploadsService } from '@/services/uploads.service'
 import { useAuth } from '@/contexts/AuthContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import { usePostsRealtime } from '@/hooks/useRealtimeAppointments'
 
 interface Reaction { type: string; count: number; viewerReacted: boolean }
@@ -14,7 +15,7 @@ interface Post {
   id: string; authorId: string; content: string; imageUrl?: string
   authorName: string; authorAvatarUrl?: string; createdAt: string
   reactions: Reaction[]; comments: Comment[]
-  tenantId: string; tenantName: string
+  tenantId: string; tenantName: string; tenantLogoUrl?: string | null
 }
 
 // `apiValue` is what the POST /reactions body expects (matches the backend ReactionType enum);
@@ -288,7 +289,8 @@ function PostCard({ post, onReact, onRefresh, canDelete, onDelete }: {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-white text-sm font-semibold">{post.authorName}</p>
-                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400">
+                <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400">
+                  {post.tenantLogoUrl && <img src={post.tenantLogoUrl} alt="" className="w-3 h-3 rounded-sm object-cover" />}
                   {post.tenantName}
                 </span>
               </div>
@@ -353,6 +355,7 @@ function PostCard({ post, onReact, onRefresh, canDelete, onDelete }: {
 
 export default function PostsPage() {
   const { user } = useAuth()
+  const confirmDialog = useConfirm()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [newContent, setNewContent] = useState('')
@@ -395,14 +398,13 @@ export default function PostsPage() {
   }
 
   async function handleDelete(postId: string) {
-    if (!confirm('Eliminar esta publicación? Esta acción no se puede deshacer.')) return
+    if (!await confirmDialog('Eliminar esta publicación? Esta acción no se puede deshacer.')) return
     await api.delete(`/posts/${postId}`)
     refresh()
   }
 
-  async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function uploadPostImage(file: File) {
+    if (!file.type.startsWith('image/')) return
     setUploadingImage(true)
     try {
       const url = await uploadsService.uploadImage(file)
@@ -412,6 +414,18 @@ export default function PostsPage() {
     } finally {
       setUploadingImage(false)
     }
+  }
+
+  function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) uploadPostImage(file)
+  }
+
+  // 23.20.11 — arrastrar y soltar, además del selector de archivos por clic.
+  function handleImageDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (file) uploadPostImage(file)
   }
 
   async function createPost() {
@@ -487,11 +501,13 @@ export default function PostsPage() {
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleImageDrop}
               disabled={uploadingImage}
               className="w-full border border-dashed border-zinc-700 hover:border-red-600 rounded-xl py-4 flex items-center justify-center gap-2 text-zinc-500 hover:text-red-500 transition-colors text-sm"
             >
               {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />}
-              {uploadingImage ? 'Subiendo imagen...' : 'Subir una foto (opcional)'}
+              {uploadingImage ? 'Subiendo imagen...' : 'Subir o arrastrar una foto (opcional)'}
             </button>
           )}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick} />

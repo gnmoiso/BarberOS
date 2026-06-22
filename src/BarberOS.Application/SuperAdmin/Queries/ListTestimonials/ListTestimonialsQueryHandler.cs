@@ -12,10 +12,12 @@ internal sealed class ListTestimonialsQueryHandler(
             ? await testimonials.ListApprovedForHomeAsync(ct)
             : query.ShowOnLoginOnly == true
                 ? await testimonials.ListApprovedForLoginAsync(ct)
-                : await testimonials.ListAllAsync(ct);
+                : query.ShowOnRegisterOnly == true
+                    ? await testimonials.ListApprovedForRegisterAsync(ct)
+                    : await testimonials.ListAllAsync(ct);
 
         return all.Select(t => new TestimonialDto(
             t.Id, t.TenantId, t.Content, t.AuthorName, t.BarbershipName,
-            t.ShowOnHome, t.ShowOnLogin)).ToList();
+            t.Status.ToString(), t.ShowOnHome, t.ShowOnLogin, t.ShowOnRegister)).ToList();
     }
 }

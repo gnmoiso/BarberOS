@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Calendar, ChevronLeft, ChevronRight, Clock, Search, CheckCircle2, Play, Flag, Trash2 } from 'lucide-react'
+import { Plus, Calendar, ChevronLeft, ChevronRight, Clock, Search, CheckCircle2, Play, Flag, Trash2, XCircle } from 'lucide-react'
 import { appointmentsService } from '@/services/appointments.service'
 import { servicesService } from '@/services/services.service'
 import { barbersService } from '@/services/barbers.service'
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import { formatCOP } from '@/utils/currency'
 import type { Appointment, Barber, Service, BookAppointmentRequest, AvailableSlot } from '@/types'
 
@@ -30,6 +31,7 @@ function toDateString(d: Date) {
 
 /** Agenda de gestión para el barbero/dueño — navegación por día, equipo, clientes. */
 export default function AppointmentsPage() {
+  const confirmDialog = useConfirm()
   const [date, setDate] = useState(toDateString(new Date()))
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
@@ -110,11 +112,22 @@ export default function AppointmentsPage() {
     } finally { setActioning(null) }
   }
 
+  // El barbero puede marcar directamente "No asistió" sin pasar primero por Confirmar — las
+  // citas no necesitan confirmarse para poder registrar que el cliente no llegó.
+  async function markNoShow(a: Appointment) {
+    if (!await confirmDialog(`Marcar a ${a.customerName} como no asistió?`, { confirmLabel: 'No asistió' })) return
+    setActioning(a.id)
+    try {
+      await appointmentsService.noShow(a.id)
+      load()
+    } finally { setActioning(null) }
+  }
+
   // 23.14.2 — only barbers/owners reach this screen at all (CustomerAppointmentsPage is the
   // customer-facing one), so any authenticated viewer here is already authorized; the backend
   // re-checks cancelledByBarber=true requires the Barber role regardless of what's sent here.
   async function deleteAppointment(a: Appointment) {
-    if (!confirm(`Eliminar la cita de ${a.customerName}? Esta acción no se puede deshacer.`)) return
+    if (!await confirmDialog(`Eliminar la cita de ${a.customerName}? Esta acción no se puede deshacer.`)) return
     setActioning(a.id)
     try {
       await appointmentsService.cancel(a.id, 'Eliminada por la barbería', true)
@@ -202,6 +215,15 @@ export default function AppointmentsPage() {
                         className="flex items-center gap-1 text-xs bg-red-600/15 text-red-400 hover:bg-red-600/25 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                       >
                         <next.icon size={12} />{next.label}
+                      </button>
+                    )}
+                    {(a.status === 'Pending' || a.status === 'Confirmed' || a.status === 'InProgress') && (
+                      <button
+                        onClick={() => markNoShow(a)}
+                        disabled={actioning === a.id}
+                        className="flex items-center gap-1 text-xs bg-orange-500/15 text-orange-400 hover:bg-orange-500/25 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <XCircle size={12} />No asistió
                       </button>
                     )}
                     {(a.status === 'Pending' || a.status === 'Confirmed' || a.status === 'InProgress') && (

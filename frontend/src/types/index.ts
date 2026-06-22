@@ -59,6 +59,7 @@ export interface MyTenant {
   slug: string
   role: string
   status: string
+  logoUrl?: string | null
 }
 
 export interface RegisterBarberRequest {

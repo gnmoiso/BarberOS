@@ -14,7 +14,17 @@ interface Testimonial {
   barbershipName: string
 }
 
-function Logo({ size = 9 }: { size?: number }) {
+function Logo({ size = 9, logoUrl }: { size?: number; logoUrl?: string | null }) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt="Logo"
+        className="rounded-xl overflow-hidden shrink-0 shadow-lg shadow-black/40 object-cover"
+        style={{ width: size * 4, height: size * 4 }}
+      />
+    )
+  }
   return (
     <div className="rounded-xl overflow-hidden flex shrink-0 shadow-lg shadow-black/40" style={{ width: size * 4, height: size * 4 }}>
       <div className="w-1/2 bg-red-600 flex items-center justify-center">
@@ -36,11 +46,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [quoteIdx, setQuoteIdx] = useState(0)
+  const [platformLogoUrl, setPlatformLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     api.get('/testimonials/login').then(r => {
       if (r.data?.length) setTestimonials(r.data)
     }).catch(() => {})
+    api.get('/public/platform-settings').then(r => setPlatformLogoUrl(r.data?.logoUrl ?? null)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -104,7 +116,7 @@ export default function LoginPage() {
 
         <div className="p-12 relative z-10">
           <Link to="/" className="flex items-center gap-2.5">
-            <Logo size={9} />
+            <Logo size={9} logoUrl={platformLogoUrl} />
             <span className="font-black text-xl">Barber<span className="text-red-600">OS</span></span>
           </Link>
         </div>
@@ -148,7 +160,7 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mb-8 lg:hidden">
-            <Logo size={6} />
+            <Logo size={6} logoUrl={platformLogoUrl} />
             <span className="font-black">Barber<span className="text-red-600">OS</span></span>
           </Link>
 

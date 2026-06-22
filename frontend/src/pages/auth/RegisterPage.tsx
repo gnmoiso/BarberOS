@@ -1,11 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Scissors, User, Building2, Eye, EyeOff } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { sanitizePhoneInput, validatePhone } from '@/utils/phone'
+import { api } from '@/services/api'
 
 type Mode = 'select' | 'barber' | 'customer'
+
+function BrandLogo({ logoUrl, className }: { logoUrl: string | null; className?: string }) {
+  return logoUrl
+    ? <img src={logoUrl} alt="Logo" className={`${className} rounded-xl object-cover`} />
+    : <Scissors className={`text-red-600 ${className}`} />
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -14,6 +21,13 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [platformLogoUrl, setPlatformLogoUrl] = useState<string | null>(null)
+  const [testimonial, setTestimonial] = useState<{ content: string; authorName: string; barbershipName: string } | null>(null)
+
+  useEffect(() => {
+    api.get('/public/platform-settings').then(r => setPlatformLogoUrl(r.data?.logoUrl ?? null)).catch(() => {})
+    api.get('/testimonials/register').then(r => { if (r.data?.length) setTestimonial(r.data[0]) }).catch(() => {})
+  }, [])
 
   const [barberForm, setBarberForm] = useState({
     email: '', fullName: '', password: '', barbershopName: '', phone: ''
@@ -62,7 +76,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 mb-4">
-              <Scissors className="text-red-600 w-8 h-8" />
+              <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8" />
               <span className="text-white font-bold text-2xl">BarberOS</span>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Crear cuenta</h1>
@@ -105,6 +119,13 @@ export default function RegisterPage() {
             </button>
           </div>
 
+          {testimonial && (
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-5 mt-8">
+              <p className="text-zinc-300 text-sm italic leading-relaxed">"{testimonial.content}"</p>
+              <p className="text-zinc-500 text-xs mt-2">— {testimonial.authorName}, {testimonial.barbershipName}</p>
+            </div>
+          )}
+
           <p className="text-center text-zinc-500 text-sm mt-8">
             ¿Ya tienes cuenta?{' '}
             <Link to="/login" className="text-red-500 hover:text-red-400">
@@ -125,7 +146,7 @@ export default function RegisterPage() {
           <button onClick={() => setMode('select')} className="text-zinc-400 hover:text-white text-sm mb-4 block mx-auto">
             ← Volver
           </button>
-          <Scissors className="text-red-600 w-8 h-8 mx-auto mb-3" />
+          <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8 mx-auto mb-3" />
           <h1 className="text-2xl font-bold text-white">
             {isBarber ? 'Registrar barbería' : 'Crear cuenta de cliente'}
           </h1>

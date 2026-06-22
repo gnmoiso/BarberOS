@@ -13,4 +13,6 @@ public sealed record BarbershipSettingsDto(
     decimal? WashPrice,
     string? Address,
     string? OwnerName,
-    int ReminderMinutesBeforeAppointment);
+    int ReminderMinutesBeforeAppointment,
+    int MinLeadMinutes,
+    string? LogoUrl);

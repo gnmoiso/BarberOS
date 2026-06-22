@@ -5,4 +5,5 @@ namespace BarberOS.Application.SuperAdmin.Commands.SetTestimonialVisibility;
 public sealed record SetTestimonialVisibilityCommand(
     Guid TestimonialId,
     bool ShowOnHome,
-    bool ShowOnLogin) : ICommand;
+    bool ShowOnLogin,
+    bool ShowOnRegister) : ICommand;

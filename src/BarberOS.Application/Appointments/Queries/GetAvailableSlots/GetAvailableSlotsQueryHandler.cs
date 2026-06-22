@@ -62,6 +62,11 @@ internal sealed class GetAvailableSlotsQueryHandler(
         DateTimeOffset? breakStart = weekdaySchedule.BreakStart.HasValue ? ToUtc(weekdaySchedule.BreakStart.Value) : null;
         DateTimeOffset? breakEnd = weekdaySchedule.BreakEnd.HasValue ? ToUtc(weekdaySchedule.BreakEnd.Value) : null;
 
+        // 23.19 — never offer a slot that's already started or that doesn't leave the barbershop's
+        // configured minimum lead time (e.g. 30 min) to prepare. A no-op for future dates, since
+        // dayStart is already far beyond "now" then.
+        var earliestStart = DateTimeOffset.UtcNow.AddMinutes(tenantSettings?.MinLeadMinutes ?? 30);
+
         var slots = new List<SlotDto>();
         var slotStart = dayStart;
         var duration = TimeSpan.FromMinutes(service.DurationMinutes);
@@ -71,7 +76,8 @@ internal sealed class GetAvailableSlotsQueryHandler(
             var slotEnd = slotStart + duration;
             var overlapsAppointment = busySlots.Any(b => slotStart < b.EndsAt && slotEnd > b.StartsAt);
             var overlapsBreak = breakStart.HasValue && breakEnd.HasValue && slotStart < breakEnd.Value && slotEnd > breakStart.Value;
-            if (!overlapsAppointment && !overlapsBreak) slots.Add(new SlotDto(slotStart, slotEnd));
+            var tooSoon = slotStart < earliestStart;
+            if (!overlapsAppointment && !overlapsBreak && !tooSoon) slots.Add(new SlotDto(slotStart, slotEnd));
             slotStart = slotStart.AddMinutes(30);
         }
 

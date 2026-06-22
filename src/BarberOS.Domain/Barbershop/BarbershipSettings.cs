@@ -25,15 +25,21 @@ public sealed class BarbershipSettings : BaseAuditableEntity
     // Barbershop profile
     public string? Address { get; private set; }
     public string? OwnerName { get; private set; }
+    public string? LogoUrl { get; private set; }
 
     /// <summary>Minutes before an appointment the barber wants their reminder notification to fire. Customers always get 20.</summary>
     public int ReminderMinutesBeforeAppointment { get; private set; } = 20;
+
+    /// <summary>23.19 — minimum lead time, in minutes, between "now" and the earliest bookable slot
+    /// on the SAME day (e.g. 30 means no slot may start in the next 30 minutes). One of 15/30/45/60.</summary>
+    public int MinLeadMinutes { get; private set; } = 30;
 
     public static BarbershipSettings CreateDefault(Guid tenantId) =>
         new() { TenantId = tenantId };
 
     public void UpdateGeneral(int daysAhead, decimal basePrice, string currency,
-        decimal? beardPrice, decimal? eyebrowPrice, decimal? washPrice, int? reminderMinutesBefore = null)
+        decimal? beardPrice, decimal? eyebrowPrice, decimal? washPrice, int? reminderMinutesBefore = null,
+        int? minLeadMinutes = null)
     {
         DaysAheadNormalUser = daysAhead;
         BasePriceNoService = basePrice;
@@ -43,6 +49,8 @@ public sealed class BarbershipSettings : BaseAuditableEntity
         WashPrice = washPrice ?? 0;
         if (reminderMinutesBefore.HasValue)
             ReminderMinutesBeforeAppointment = Math.Clamp(reminderMinutesBefore.Value, 1, 1440);
+        if (minLeadMinutes.HasValue)
+            MinLeadMinutes = minLeadMinutes.Value is 15 or 30 or 45 or 60 ? minLeadMinutes.Value : MinLeadMinutes;
     }
 
     public void UpdateProfile(string? address, string? ownerName)
@@ -50,4 +58,6 @@ public sealed class BarbershipSettings : BaseAuditableEntity
         Address = address;
         OwnerName = ownerName;
     }
+
+    public void SetLogo(string? logoUrl) => LogoUrl = logoUrl;
 }

@@ -7,7 +7,8 @@ namespace BarberOS.Application.Posts.Queries.ListPosts;
 internal sealed class ListPostsQueryHandler(
     IPostRepository posts,
     IUserRepository users,
-    ITenantRepository tenants) : ICommandHandler<ListPostsQuery, List<PostDto>>
+    ITenantRepository tenants,
+    IBarbershipSettingsRepository settings) : ICommandHandler<ListPostsQuery, List<PostDto>>
 {
     public async Task<List<PostDto>> Handle(ListPostsQuery query, CancellationToken ct)
     {
@@ -20,6 +21,11 @@ internal sealed class ListPostsQueryHandler(
         var tenantNameMap = tenantRecords.ToDictionary(t => t.Id, t => t.Name);
         string TenantNameFor(Guid tenantId) =>
             tenantId == Guid.Empty ? "BarberOS" : tenantNameMap.GetValueOrDefault(tenantId, "Barbería");
+
+        var logoMap = new Dictionary<Guid, string?>();
+        foreach (var tenantId in tenantIds.Where(id => id != Guid.Empty))
+            logoMap[tenantId] = (await settings.GetByTenantAsync(tenantId, ct))?.LogoUrl;
+        string? TenantLogoFor(Guid tenantId) => logoMap.GetValueOrDefault(tenantId);
 
         var authorIds = all.Select(p => p.AuthorId)
             .Concat(all.SelectMany(p => p.Comments).Select(c => c.UserId))
@@ -51,7 +57,8 @@ internal sealed class ListPostsQueryHandler(
                 Summarize(c.Reactions.Select(r => (r.UserId, r.Type)))
             )).ToList(),
             p.TenantId,
-            TenantNameFor(p.TenantId)
+            TenantNameFor(p.TenantId),
+            TenantLogoFor(p.TenantId)
         )).ToList();
     }
 }

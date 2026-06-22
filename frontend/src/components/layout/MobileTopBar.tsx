@@ -1,18 +1,24 @@
 import { Scissors, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useBrandLogo } from '@/hooks/useBrandLogo'
 
 export function MobileTopBar() {
   const { user, logout } = useAuth()
+  const logoUrl = useBrandLogo()
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 px-4 h-14 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg overflow-hidden flex shrink-0">
-          <div className="w-1/2 bg-red-600 flex items-center justify-center">
-            <Scissors size={12} className="text-white" style={{ marginRight: -6 }} />
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg object-cover shrink-0" />
+        ) : (
+          <div className="w-7 h-7 rounded-lg overflow-hidden flex shrink-0">
+            <div className="w-1/2 bg-red-600 flex items-center justify-center">
+              <Scissors size={12} className="text-white" style={{ marginRight: -6 }} />
+            </div>
+            <div className="w-1/2 bg-blue-600" />
           </div>
-          <div className="w-1/2 bg-blue-600" />
-        </div>
+        )}
         <span className="font-black text-base text-white">Barber<span className="text-red-600">OS</span></span>
       </div>
       <div className="flex items-center gap-3">

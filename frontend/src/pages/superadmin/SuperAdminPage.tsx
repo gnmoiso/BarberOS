@@ -1,4 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useConfirm } from '@/contexts/ConfirmContext'
+import { notifyBrandLogoUpdated } from '@/hooks/useBrandLogo'
+import { StatCard } from '@/components/ui/StatCard'
 import {
   Shield, Plus, Eye, EyeOff, Settings, Building2, KeyRound, MessageSquareQuote,
   LayoutDashboard, Copy, CheckCircle2, Users, UserCheck, AlertTriangle, Scissors,
@@ -39,6 +42,7 @@ interface TenantSummary {
   appointmentCount: number
   averageRatingStars: number
   ratingCount: number
+  logoUrl?: string | null
 }
 
 interface TenantMember {
@@ -53,8 +57,10 @@ interface Testimonial {
   content: string
   authorName: string
   barbershipName: string
+  status: 'Pending' | 'Approved' | 'Rejected'
   showOnHome: boolean
   showOnLogin: boolean
+  showOnRegister: boolean
 }
 
 interface PlatformSettings {
@@ -110,22 +116,10 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
   Churned: { label: 'Cancelada', cls: 'bg-zinc-700 text-zinc-400 border-zinc-600' },
 }
 
-function StatCard({ icon: Icon, label, value, accent }: { icon: any; label: string; value: string | number; accent: string }) {
-  return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 flex items-center gap-4">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${accent}`}>
-        <Icon className="w-5 h-5" />
-      </div>
-      <div>
-        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">{label}</p>
-        <p className="text-white text-2xl font-black mt-0.5">{value}</p>
-      </div>
-    </div>
-  )
-}
 
 export default function SuperAdminPage() {
   const { user, logout } = useAuth()
+  const confirmDialog = useConfirm()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
   const [licenses, setLicenses] = useState<License[]>([])
@@ -164,7 +158,10 @@ export default function SuperAdminPage() {
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({})
   const [showGlobalPostForm, setShowGlobalPostForm] = useState(false)
   const [globalPostContent, setGlobalPostContent] = useState('')
+  const [globalPostImageUrl, setGlobalPostImageUrl] = useState<string | null>(null)
+  const [uploadingGlobalImage, setUploadingGlobalImage] = useState(false)
   const [globalPostSaving, setGlobalPostSaving] = useState(false)
+  const globalImageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (user?.role !== 'SuperAdmin') {
@@ -220,8 +217,20 @@ export default function SuperAdminPage() {
     setTimeout(() => setCopiedCode(null), 2000)
   }
 
-  async function setTestimonialVisibility(id: string, showOnHome: boolean, showOnLogin: boolean) {
-    await api.put(`/super-admin/testimonials/${id}/visibility`, { showOnHome, showOnLogin })
+  async function setTestimonialVisibility(t: Testimonial, patch: Partial<Pick<Testimonial, 'showOnHome' | 'showOnLogin' | 'showOnRegister'>>) {
+    await api.put(`/super-admin/testimonials/${t.id}/visibility`, {
+      showOnHome: t.showOnHome, showOnLogin: t.showOnLogin, showOnRegister: t.showOnRegister, ...patch,
+    })
+    await loadAll()
+  }
+
+  async function approveTestimonial(id: string) {
+    await api.post(`/super-admin/testimonials/${id}/approve`)
+    await loadAll()
+  }
+
+  async function rejectTestimonial(id: string) {
+    await api.post(`/super-admin/testimonials/${id}/reject`)
     await loadAll()
   }
 
@@ -245,6 +254,7 @@ export default function SuperAdminPage() {
       await api.put('/super-admin/platform-settings/logo', { logoUrl: url })
       setSettingsForm(f => ({ ...f, logoUrl: url }))
       setPlatformSettings(f => ({ ...f, logoUrl: url }))
+      notifyBrandLogoUpdated()
     } catch {
       setSettingsMsg('Error al subir el logo')
     } finally {
@@ -293,9 +303,23 @@ export default function SuperAdminPage() {
   }
 
   async function deleteOwnerPost(postId: string) {
-    if (!confirm('Eliminar esta publicación? Esta acción no se puede deshacer.')) return
+    if (!await confirmDialog('Eliminar esta publicación? Esta acción no se puede deshacer.')) return
     await api.delete(`/super-admin/posts/${postId}`)
     loadOwnerPosts(novedadesTenantId)
+  }
+
+  async function handleGlobalImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingGlobalImage(true)
+    try {
+      const url = await uploadsService.uploadImage(file)
+      setGlobalPostImageUrl(url)
+    } catch {
+      // best-effort — keep the post usable without the image
+    } finally {
+      setUploadingGlobalImage(false)
+    }
   }
 
   async function createGlobalPost(e: React.FormEvent) {
@@ -303,8 +327,9 @@ export default function SuperAdminPage() {
     if (!globalPostContent.trim()) return
     setGlobalPostSaving(true)
     try {
-      await api.post('/super-admin/posts/global', { content: globalPostContent.trim(), imageUrl: null })
+      await api.post('/super-admin/posts/global', { content: globalPostContent.trim(), imageUrl: globalPostImageUrl })
       setGlobalPostContent('')
+      setGlobalPostImageUrl(null)
       setShowGlobalPostForm(false)
       loadOwnerPosts(novedadesTenantId)
     } finally {
@@ -417,7 +442,7 @@ export default function SuperAdminPage() {
                 <p className="text-zinc-500 text-sm mt-1">Vista general de BarberOS — barberías, licencias y crecimiento</p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
                 <StatCard icon={Building2} label="Barberías" value={tenants.length} accent="bg-blue-500/10 text-blue-400" />
                 <StatCard icon={CheckCircle2} label="Con licencia activa" value={stats.activeTenants} accent="bg-green-500/10 text-green-400" />
                 <StatCard icon={AlertTriangle} label="Sin licencia / vencidas" value={tenants.length - stats.activeTenants} accent="bg-orange-500/10 text-orange-400" />
@@ -502,8 +527,12 @@ export default function SuperAdminPage() {
                     <div key={t.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className="w-10 h-10 bg-red-600/10 rounded-xl flex items-center justify-center shrink-0">
-                            <Scissors className="w-5 h-5 text-red-500" />
+                          <div className="w-10 h-10 bg-red-600/10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+                            {t.logoUrl ? (
+                              <img src={t.logoUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Scissors className="w-5 h-5 text-red-500" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="text-white font-bold">{t.name}</p>
@@ -715,8 +744,42 @@ export default function SuperAdminPage() {
                     placeholder="Anuncio oficial de la plataforma..."
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500 resize-none"
                   />
+
+                  {globalPostImageUrl ? (
+                    <div className="relative">
+                      <img src={globalPostImageUrl} alt="Vista previa" className="w-full max-h-56 object-cover rounded-xl" />
+                      <button
+                        type="button"
+                        onClick={() => setGlobalPostImageUrl(null)}
+                        className="absolute top-2 right-2 w-7 h-7 bg-black/70 hover:bg-black rounded-full flex items-center justify-center text-white transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => globalImageInputRef.current?.click()}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={e => {
+                        e.preventDefault()
+                        const file = e.dataTransfer.files?.[0]
+                        if (file) {
+                          setUploadingGlobalImage(true)
+                          uploadsService.uploadImage(file).then(setGlobalPostImageUrl).finally(() => setUploadingGlobalImage(false))
+                        }
+                      }}
+                      disabled={uploadingGlobalImage}
+                      className="w-full border border-dashed border-zinc-700 hover:border-blue-500 rounded-xl py-4 flex items-center justify-center gap-2 text-zinc-500 hover:text-blue-400 transition-colors text-sm"
+                    >
+                      {uploadingGlobalImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                      {uploadingGlobalImage ? 'Subiendo imagen...' : 'Subir o arrastrar una foto (opcional)'}
+                    </button>
+                  )}
+                  <input ref={globalImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleGlobalImagePick} />
+
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => setShowGlobalPostForm(false)} className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white py-2 rounded-xl text-sm transition-colors">
+                    <button type="button" onClick={() => { setShowGlobalPostForm(false); setGlobalPostImageUrl(null) }} className="flex-1 border border-zinc-700 text-zinc-400 hover:text-white py-2 rounded-xl text-sm transition-colors">
                       Cancelar
                     </button>
                     <button
@@ -829,39 +892,78 @@ export default function SuperAdminPage() {
             <div className="space-y-6">
               <div>
                 <h1 className="text-2xl font-black text-white">Testimonios</h1>
-                <p className="text-zinc-500 text-sm mt-1">Elige cuáles testimonios de barberías se muestran en Home y Login</p>
+                <p className="text-zinc-500 text-sm mt-1">Aprueba o rechaza testimonios de barberías, y elige cuáles se muestran en Home, Login y Registro</p>
               </div>
               <div className="space-y-3">
                 {testimonials.length === 0 && (
                   <p className="text-zinc-600 text-center py-8">No hay testimonios aún</p>
                 )}
                 {testimonials.map(t => (
-                  <div key={t.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+                  <div key={t.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-white text-sm mb-2">"{t.content}"</p>
                         <p className="text-zinc-400 text-xs">— {t.authorName} · {t.barbershipName}</p>
                       </div>
-                      <div className="flex flex-col gap-2 flex-shrink-0">
+                      <span className={`shrink-0 text-xs px-2.5 py-1 rounded-lg border ${
+                        t.status === 'Approved' ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                        : t.status === 'Rejected' ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                        : 'bg-orange-500/10 text-orange-400 border-orange-500/30'
+                      }`}>
+                        {t.status === 'Approved' ? 'Aprobado' : t.status === 'Rejected' ? 'Rechazado' : 'Pendiente'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-zinc-800 flex-wrap">
+                      {t.status !== 'Approved' && (
                         <button
-                          onClick={() => setTestimonialVisibility(t.id, !t.showOnHome, t.showOnLogin)}
-                          className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                            t.showOnHome ? 'bg-red-600/20 text-red-500' : 'bg-zinc-800 text-zinc-500 hover:text-white'
-                          }`}
+                          onClick={() => approveTestimonial(t.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600/15 text-green-400 hover:bg-green-600/25 transition-colors"
                         >
-                          {t.showOnHome ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                          Home
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Aprobar
                         </button>
+                      )}
+                      {t.status !== 'Rejected' && (
                         <button
-                          onClick={() => setTestimonialVisibility(t.id, t.showOnHome, !t.showOnLogin)}
-                          className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                            t.showOnLogin ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-800 text-zinc-500 hover:text-white'
-                          }`}
+                          onClick={() => rejectTestimonial(t.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-red-600/15 text-red-400 hover:bg-red-600/25 transition-colors"
                         >
-                          {t.showOnLogin ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                          Login
+                          <X className="w-3.5 h-3.5" /> Rechazar
                         </button>
-                      </div>
+                      )}
+
+                      {t.status === 'Approved' && (
+                        <>
+                          <div className="w-px h-5 bg-zinc-800 mx-1" />
+                          <button
+                            onClick={() => setTestimonialVisibility(t, { showOnHome: !t.showOnHome })}
+                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                              t.showOnHome ? 'bg-red-600/20 text-red-500' : 'bg-zinc-800 text-zinc-500 hover:text-white'
+                            }`}
+                          >
+                            {t.showOnHome ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            Home
+                          </button>
+                          <button
+                            onClick={() => setTestimonialVisibility(t, { showOnLogin: !t.showOnLogin })}
+                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                              t.showOnLogin ? 'bg-blue-500/20 text-blue-400' : 'bg-zinc-800 text-zinc-500 hover:text-white'
+                            }`}
+                          >
+                            {t.showOnLogin ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            Login
+                          </button>
+                          <button
+                            onClick={() => setTestimonialVisibility(t, { showOnRegister: !t.showOnRegister })}
+                            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                              t.showOnRegister ? 'bg-purple-500/20 text-purple-400' : 'bg-zinc-800 text-zinc-500 hover:text-white'
+                            }`}
+                          >
+                            {t.showOnRegister ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                            Registro
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}

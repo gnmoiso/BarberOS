@@ -1,5 +1,6 @@
 using BarberOS.Application.Abstractions.Messaging;
 using BarberOS.Application.BarbershipSettings.Commands.UpdateBarbershipSettings;
+using BarberOS.Application.BarbershipSettings.Commands.SetBarbershipLogo;
 using BarberOS.Application.BarbershipSettings.Queries.GetBarbershipSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,10 +29,20 @@ public sealed class BarbershipSettingsController(ISender sender) : ControllerBas
         await sender.Send(new UpdateBarbershipSettingsCommand(TenantId,
             req.DaysAheadNormalUser, req.BasePriceNoService, req.Currency,
             req.BeardPrice, req.EyebrowPrice, req.WashPrice, req.Address, req.OwnerName,
-            req.ReminderMinutesBeforeAppointment), ct);
+            req.ReminderMinutesBeforeAppointment, req.MinLeadMinutes), ct);
+        return NoContent();
+    }
+
+    [HttpPut("logo")]
+    [Authorize(Roles = "Barber")]
+    public async Task<IActionResult> SetLogo([FromBody] SetLogoRequest req, CancellationToken ct)
+    {
+        await sender.Send(new SetBarbershipLogoCommand(TenantId, req.LogoUrl), ct);
         return NoContent();
     }
 }
+
+public sealed record SetLogoRequest(string? LogoUrl);
 
 public sealed record UpdateSettingsRequest(
     int DaysAheadNormalUser,
@@ -42,4 +53,5 @@ public sealed record UpdateSettingsRequest(
     decimal? WashPrice,
     string? Address,
     string? OwnerName,
-    int? ReminderMinutesBeforeAppointment);
+    int? ReminderMinutesBeforeAppointment,
+    int? MinLeadMinutes);

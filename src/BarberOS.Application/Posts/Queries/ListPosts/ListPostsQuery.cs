@@ -24,7 +24,8 @@ public sealed record PostDto(
     List<ReactionSummary> Reactions,
     List<CommentDto> Comments,
     Guid TenantId,
-    string TenantName);
+    string TenantName,
+    string? TenantLogoUrl);
 
 public sealed record ReactionSummary(string Type, int Count, bool ViewerReacted);
 

@@ -19,6 +19,9 @@ internal sealed class TestimonialRepository(AppDbContext db) : ITestimonialRepos
     public Task<List<Testimonial>> ListApprovedForLoginAsync(CancellationToken ct) =>
         db.Testimonials.Where(t => t.ShowOnLogin).ToListAsync(ct);
 
+    public Task<List<Testimonial>> ListApprovedForRegisterAsync(CancellationToken ct) =>
+        db.Testimonials.Where(t => t.ShowOnRegister).ToListAsync(ct);
+
     public Task<List<Testimonial>> ListAllAsync(CancellationToken ct) =>
         db.Testimonials.OrderByDescending(t => t.CreatedAt).ToListAsync(ct);
 

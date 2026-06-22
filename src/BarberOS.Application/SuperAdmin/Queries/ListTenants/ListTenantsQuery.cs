@@ -22,4 +22,5 @@ public sealed record TenantSummaryDto(
     string? ActiveInvitationCode,
     int AppointmentCount,
     double AverageRatingStars,
-    int RatingCount);
+    int RatingCount,
+    string? LogoUrl);
