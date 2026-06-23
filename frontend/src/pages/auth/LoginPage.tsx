@@ -16,6 +16,8 @@ interface Testimonial {
   barbershipName: string
 }
 
+const REMEMBERED_EMAIL_KEY = 'bos_remembered_email'
+
 function Logo({ size = 9, logoUrl }: { size?: number; logoUrl?: string | null }) {
   if (logoUrl) {
     return (
@@ -46,7 +48,8 @@ export default function LoginPage() {
   const fromLocation = (location.state as { from?: { pathname: string; search?: string } })?.from
   const from = fromLocation && `${fromLocation.pathname}${fromLocation.search ?? ''}`
 
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm] = useState({ email: localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '', password: '' })
+  const [remember, setRemember] = useState(() => !!localStorage.getItem(REMEMBERED_EMAIL_KEY))
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -74,6 +77,8 @@ export default function LoginPage() {
     setError(null)
     try {
       const user = await login({ email: form.email, password: form.password })
+      if (remember) localStorage.setItem(REMEMBERED_EMAIL_KEY, form.email)
+      else localStorage.removeItem(REMEMBERED_EMAIL_KEY)
       const target = homeRouteFor(user)
       const sameSection = from && from !== '/login' && from.split('/')[1] === target.split('/')[1]
       navigate(sameSection ? from : target, { replace: true })
@@ -214,6 +219,16 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-zinc-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={e => setRemember(e.target.checked)}
+                className="w-4 h-4 accent-red-600"
+              />
+              Recordar mis datos
+            </label>
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">

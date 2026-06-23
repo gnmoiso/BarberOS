@@ -15,6 +15,7 @@ public interface IUserRepository
     void Add(User user);
     void AddRefreshToken(RefreshToken token);
     void AddTenantRole(UserTenantRole tenantRole);
+    void RemoveTenantRole(UserTenantRole tenantRole);
 
     /// <summary>Counts members of a tenant grouped by role (Barber/Customer), keyed by <see cref="Role"/>.</summary>
     Task<Dictionary<Role, int>> CountTenantMembersByRoleAsync(Guid tenantId, CancellationToken ct = default);

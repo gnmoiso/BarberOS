@@ -23,6 +23,9 @@ export const authService = {
   myTenants: () =>
     api.get<MyTenant[]>('/auth/my-tenants').then(r => r.data),
 
+  leaveTenant: (tenantId: string) =>
+    api.delete<AuthTokens>(`/auth/my-tenants/${tenantId}`).then(r => r.data),
+
   switchTenant: (tenantId: string) =>
     api.post<AuthTokens>('/auth/switch-tenant', { tenantId }).then(r => r.data),
 }

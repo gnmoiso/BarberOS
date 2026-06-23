@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Building2, ArrowRight, Check, QrCode } from 'lucide-react'
+import { KeyRound, Building2, ArrowRight, Check, QrCode, Trash2 } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
 import { JoinSuccessOverlay } from '@/components/JoinSuccessOverlay'
 import { BackButton } from '@/components/shared/BackButton'
@@ -15,6 +16,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
 
 export default function BarbershopCodePage() {
   const { user, setTokens } = useAuth()
+  const confirmDialog = useConfirm()
   const [tab, setTab] = useState<'code' | 'qr'>('code')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,6 +24,7 @@ export default function BarbershopCodePage() {
   const [joinedTenant, setJoinedTenant] = useState<string | null>(null)
   const [tenants, setTenants] = useState<MyTenant[]>([])
   const [tenantsLoading, setTenantsLoading] = useState(true)
+  const [leavingId, setLeavingId] = useState<string | null>(null)
 
   function loadTenants() {
     setTenantsLoading(true)
@@ -29,6 +32,20 @@ export default function BarbershopCodePage() {
   }
 
   useEffect(() => { loadTenants() }, [])
+
+  async function leaveTenant(t: MyTenant) {
+    if (!await confirmDialog(`¿Eliminar ${t.name} de tus barberías vinculadas?`, { confirmLabel: 'Eliminar' })) return
+    setLeavingId(t.tenantId)
+    try {
+      const tokens = await authService.leaveTenant(t.tenantId)
+      setTokens(tokens)
+      loadTenants()
+    } catch (err: any) {
+      setError(err?.response?.data?.title ?? 'No se pudo eliminar la barbería')
+    } finally {
+      setLeavingId(null)
+    }
+  }
 
   // Auto-dismiss so the celebration doesn't strand someone who never taps "Continuar".
   useEffect(() => {
@@ -111,6 +128,14 @@ export default function BarbershopCodePage() {
                   <span className={`shrink-0 text-xs px-2 py-1 rounded-lg border ${statusLabel[t.status]?.cls ?? 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
                     {statusLabel[t.status]?.label ?? t.status}
                   </span>
+                  <button
+                    onClick={() => leaveTenant(t)}
+                    disabled={leavingId === t.tenantId}
+                    title="Eliminar barbería"
+                    className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-red-500/10 disabled:opacity-50 flex items-center justify-center transition-colors group shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                  </button>
                 </div>
               )
             })}

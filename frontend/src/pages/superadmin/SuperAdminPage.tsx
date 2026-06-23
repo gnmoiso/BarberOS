@@ -6,10 +6,11 @@ import {
   Shield, Plus, Eye, EyeOff, Settings, Building2, KeyRound, MessageSquareQuote,
   LayoutDashboard, Copy, CheckCircle2, Users, UserCheck, AlertTriangle, Scissors,
   ChevronDown, Lock, X, Heart, Smile, ThumbsUp, MessageCircle, Send, Newspaper, Trash2,
-  ImagePlus, Loader2,
+  ImagePlus, Loader2, Camera, User as UserIcon,
 } from 'lucide-react'
 import { api } from '@/services/api'
 import { uploadsService } from '@/services/uploads.service'
+import { profileService } from '@/services/profile.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
@@ -114,7 +115,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
 
 
 export default function SuperAdminPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, updateUserLocal } = useAuth()
   const confirmDialog = useConfirm()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('overview')
@@ -151,7 +152,9 @@ export default function SuperAdminPage() {
   const [customersLoaded, setCustomersLoaded] = useState(false)
   const [customerQuery, setCustomerQuery] = useState('')
 
-  // Mi contraseña (SuperAdmin)
+  // Mi cuenta (SuperAdmin) — foto de perfil + contraseña
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [savingPw, setSavingPw] = useState(false)
   const [pwMsg, setPwMsg] = useState<{ text: string; error: boolean } | null>(null)
@@ -301,6 +304,20 @@ export default function SuperAdminPage() {
     if (!await confirmDialog(warning, { confirmLabel: 'Eliminar' })) return
     await api.delete(`/super-admin/licenses/${l.id}`)
     loadAll()
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingAvatar(true)
+    try {
+      const url = await uploadsService.uploadImage(file)
+      await profileService.updateAvatar(url)
+      updateUserLocal({ avatarUrl: url })
+    } finally {
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
   }
 
   async function saveMyPassword(e: React.FormEvent) {
@@ -1200,6 +1217,31 @@ export default function SuperAdminPage() {
                   {settingsMsg && <span className="text-sm text-red-500">{settingsMsg}</span>}
                 </div>
               </form>
+
+              <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex items-center gap-5">
+                <div className="relative shrink-0">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-600 to-blue-600 flex items-center justify-center overflow-hidden">
+                    {user?.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon className="w-8 h-8 text-white" />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center text-white transition-colors border-2 border-zinc-900"
+                    title="Cambiar foto"
+                  >
+                    {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                  </button>
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-bold truncate">{user?.fullName}</p>
+                  <p className="text-zinc-500 text-sm truncate">{user?.email}</p>
+                </div>
+              </div>
 
               <form onSubmit={saveMyPassword} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
                 <h2 className="text-white font-bold text-sm flex items-center gap-2">

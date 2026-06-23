@@ -6,6 +6,7 @@ using BarberOS.Application.Auth.Commands.RegisterCustomer;
 using BarberOS.Application.Identity.Commands.Login;
 using BarberOS.Application.Identity.Commands.RefreshToken;
 using BarberOS.Application.Identity.Commands.SwitchTenant;
+using BarberOS.Application.Identity.Commands.LeaveTenant;
 using BarberOS.Application.Identity.Queries.MyTenants;
 using BarberOS.Application.Profile.Commands.ChangePassword;
 using BarberOS.Application.Profile.Commands.UpdateAvatar;
@@ -92,6 +93,17 @@ public sealed class AuthController(ISender sender) : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         return Ok(await sender.Send(new MyTenantsQuery(userId), ct));
+    }
+
+    [Authorize]
+    [HttpDelete("my-tenants/{tenantId:guid}")]
+    public async Task<IActionResult> LeaveTenant(Guid tenantId, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        Guid? currentActiveTenantId = Guid.TryParse(User.FindFirstValue("tenant_id"), out var t) ? t : null;
+        var response = await sender.Send(new LeaveTenantCommand(userId, tenantId, currentActiveTenantId, ip), ct);
+        return Ok(response);
     }
 
     [Authorize]

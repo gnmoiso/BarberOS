@@ -49,6 +49,7 @@ internal sealed class UserRepository(AppDbContext db) : IUserRepository
     public void Add(User user) => db.Users.Add(user);
     public void AddRefreshToken(RefreshToken token) => db.RefreshTokens.Add(token);
     public void AddTenantRole(UserTenantRole tenantRole) => db.Set<UserTenantRole>().Add(tenantRole);
+    public void RemoveTenantRole(UserTenantRole tenantRole) => db.Set<UserTenantRole>().Remove(tenantRole);
 
     public async Task<Dictionary<Role, int>> CountTenantMembersByRoleAsync(Guid tenantId, CancellationToken ct)
     {

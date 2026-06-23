@@ -76,7 +76,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <BackButton fallback="/" label="Volver al inicio" className="mb-6" />
+          <BackButton fallback="/" className="mb-6" />
           <div className="text-center mb-10">
             <BrandLink className="inline-flex items-center gap-2 mb-4">
               <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8" />
