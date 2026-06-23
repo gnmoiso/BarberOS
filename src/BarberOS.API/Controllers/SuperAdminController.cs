@@ -11,6 +11,7 @@ using BarberOS.Application.SuperAdmin.Queries.GetPlatformSettings;
 using BarberOS.Application.SuperAdmin.Queries.ListLicenses;
 using BarberOS.Application.SuperAdmin.Queries.ListTenantMembers;
 using BarberOS.Application.SuperAdmin.Queries.ListTenants;
+using BarberOS.Application.SuperAdmin.Queries.ListAllCustomers;
 using BarberOS.Application.SuperAdmin.Queries.ListTestimonials;
 using BarberOS.Application.SuperAdmin.Queries.AuditPhones;
 using BarberOS.Application.Posts.Queries.ListPosts;
@@ -61,6 +62,11 @@ public sealed class SuperAdminController(ISender sender, IHubContext<Appointment
     [HttpGet("tenants/{tenantId:guid}/members")]
     public async Task<IActionResult> ListTenantMembers(Guid tenantId, CancellationToken ct) =>
         Ok(await sender.Send(new ListTenantMembersQuery(tenantId), ct));
+
+    // Clientes — vista global de todos los clientes de todas las barberías.
+    [HttpGet("customers")]
+    public async Task<IActionResult> ListAllCustomers(CancellationToken ct) =>
+        Ok(await sender.Send(new ListAllCustomersQuery(), ct));
 
     // 23.17.5 — diagnostic over existing phone data registered before the 10-digit rule existed.
     [HttpGet("phone-audit")]

@@ -16,5 +16,8 @@ public interface ICustomerRepository
 
     Task<List<string>> ListAllPhonesAsync(CancellationToken ct = default);
 
+    /// <summary>Every customer across every tenant — platform-wide view for SuperAdmin.</summary>
+    Task<List<Customer>> ListAllAsync(CancellationToken ct = default);
+
     void Add(Customer customer);
 }

@@ -52,6 +52,17 @@ interface TenantMember {
   role: string
 }
 
+interface PlatformCustomer {
+  id: string
+  userId?: string | null
+  fullName: string
+  phone: string
+  email?: string
+  tenantId: string
+  tenantName: string
+  createdAt: string
+}
+
 interface Testimonial {
   id: string
   content: string
@@ -97,7 +108,7 @@ interface OwnerPost {
   comments: { id: string; authorName: string; text: string; createdAt: string }[]
 }
 
-type Tab = 'overview' | 'tenants' | 'licenses' | 'novedades' | 'testimonials' | 'settings'
+type Tab = 'overview' | 'tenants' | 'clients' | 'licenses' | 'novedades' | 'testimonials' | 'settings'
 
 // 23.17.2 — same 3 reactions, same colors, same icons everywhere in the app (picker, summary,
 // comments, detail) — this used to diverge from PostsPage.tsx's REACTIONS (red instead of yellow
@@ -149,6 +160,17 @@ export default function SuperAdminPage() {
   const [resetPassword, setResetPassword] = useState('')
   const [resetMsg, setResetMsg] = useState<{ text: string; error: boolean } | null>(null)
   const [resetting, setResetting] = useState(false)
+
+  // Clientes — vista global de todas las barberías
+  const [allCustomers, setAllCustomers] = useState<PlatformCustomer[]>([])
+  const [customersLoading, setCustomersLoading] = useState(false)
+  const [customersLoaded, setCustomersLoaded] = useState(false)
+  const [customerQuery, setCustomerQuery] = useState('')
+
+  // Mi contraseña (SuperAdmin)
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+  const [savingPw, setSavingPw] = useState(false)
+  const [pwMsg, setPwMsg] = useState<{ text: string; error: boolean } | null>(null)
 
   // Novedades (owner viewing any barbershop's posts)
   const [novedadesTenantId, setNovedadesTenantId] = useState<string>('')
@@ -262,6 +284,43 @@ export default function SuperAdminPage() {
     }
   }
 
+  async function loadAllCustomers() {
+    setCustomersLoading(true)
+    try {
+      const r = await api.get('/super-admin/customers')
+      setAllCustomers(r.data ?? [])
+      setCustomersLoaded(true)
+    } finally {
+      setCustomersLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tab === 'clients' && !customersLoaded) loadAllCustomers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
+
+  async function saveMyPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      setPwMsg({ text: 'Las contraseñas no coinciden', error: true })
+      return
+    }
+    setSavingPw(true); setPwMsg(null)
+    try {
+      await api.post('/auth/change-password', {
+        currentPassword: pwForm.currentPassword,
+        newPassword: pwForm.newPassword,
+      })
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setPwMsg({ text: 'Contraseña actualizada', error: false })
+    } catch (err: any) {
+      setPwMsg({ text: err?.response?.data?.title ?? 'Error al cambiar la contraseña', error: true })
+    } finally {
+      setSavingPw(false)
+    }
+  }
+
   async function toggleTenantMembers(tenantId: string) {
     if (expandedTenant === tenantId) { setExpandedTenant(null); return }
     setExpandedTenant(tenantId)
@@ -357,6 +416,7 @@ export default function SuperAdminPage() {
   const navItems: { key: Tab; label: string; icon: any }[] = [
     { key: 'overview', label: 'Resumen', icon: LayoutDashboard },
     { key: 'tenants', label: 'Barberías', icon: Building2 },
+    { key: 'clients', label: 'Clientes', icon: Users },
     { key: 'licenses', label: 'Licencias', icon: KeyRound },
     { key: 'novedades', label: 'Novedades', icon: Newspaper },
     { key: 'testimonials', label: 'Testimonios', icon: MessageSquareQuote },
@@ -417,7 +477,7 @@ export default function SuperAdminPage() {
         <button onClick={logout} className="text-zinc-400 text-sm">Salir</button>
       </header>
 
-      <div className="flex-1 md:ml-60 pt-14 md:pt-0">
+      <div className="flex-1 min-w-0 md:ml-60 pt-14 md:pt-0">
         {/* Mobile tabs */}
         <div className="md:hidden flex gap-1 overflow-x-auto px-4 py-3 border-b border-zinc-800">
           {navItems.map(({ key, label }) => (
@@ -627,6 +687,69 @@ export default function SuperAdminPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Clientes — vista global de todas las barberías */}
+          {tab === 'clients' && (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-black text-white">Clientes</h1>
+                <p className="text-zinc-500 text-sm mt-1">{allCustomers.length} clientes en toda la plataforma</p>
+              </div>
+
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <input
+                  className="w-full pl-9 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-red-600"
+                  placeholder="Buscar por nombre, correo, teléfono o barbería..."
+                  value={customerQuery}
+                  onChange={e => setCustomerQuery(e.target.value)}
+                />
+              </div>
+
+              {customersLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {allCustomers
+                    .filter(c => {
+                      const q = customerQuery.toLowerCase()
+                      if (!q) return true
+                      return c.fullName.toLowerCase().includes(q) ||
+                        c.email?.toLowerCase().includes(q) ||
+                        c.phone.includes(q) ||
+                        c.tenantName.toLowerCase().includes(q)
+                    })
+                    .map(c => (
+                      <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 flex items-center gap-4">
+                        <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center shrink-0">
+                          <span className="text-white font-bold text-sm">{c.fullName[0]?.toUpperCase()}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-semibold text-sm truncate">{c.fullName}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5 truncate">{c.email ?? c.phone}</p>
+                          <p className="text-zinc-600 text-xs mt-0.5 truncate flex items-center gap-1">
+                            <Building2 className="w-3 h-3 shrink-0" /> {c.tenantName}
+                          </p>
+                        </div>
+                        {c.userId && (
+                          <button
+                            onClick={() => { setResetTarget({ userId: c.userId!, fullName: c.fullName, email: c.email ?? c.phone, role: 'Customer' }); setResetPassword(''); setResetMsg(null) }}
+                            className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors shrink-0"
+                          >
+                            <Lock className="w-3 h-3" /> Restablecer
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  {allCustomers.length === 0 && (
+                    <p className="text-zinc-600 text-center py-8">No hay clientes registrados aún</p>
+                  )}
                 </div>
               )}
             </div>
@@ -1028,11 +1151,62 @@ export default function SuperAdminPage() {
                     className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-red-600 resize-none"
                   />
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center flex-wrap gap-4">
                   <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-2.5 rounded-xl transition-colors">
                     Guardar
                   </button>
                   {settingsMsg && <span className="text-sm text-red-500">{settingsMsg}</span>}
+                </div>
+              </form>
+
+              <form onSubmit={saveMyPassword} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                <h2 className="text-white font-bold text-sm flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-blue-500" /> Mi contraseña
+                </h2>
+                <p className="text-zinc-500 text-xs">Cambia la contraseña de tu propia cuenta SuperAdmin ({user?.fullName ?? user?.email}).</p>
+                <div>
+                  <label className="block text-xs text-zinc-500 mb-1.5">Contraseña actual</label>
+                  <input
+                    type="password"
+                    value={pwForm.currentPassword}
+                    onChange={e => setPwForm(f => ({ ...f, currentPassword: e.target.value }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1.5">Nueva contraseña</label>
+                    <input
+                      type="password"
+                      value={pwForm.newPassword}
+                      onChange={e => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+                      minLength={8}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-zinc-500 mb-1.5">Confirmar contraseña</label>
+                    <input
+                      type="password"
+                      value={pwForm.confirmPassword}
+                      onChange={e => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                      minLength={8}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center flex-wrap gap-4">
+                  <button
+                    type="submit"
+                    disabled={savingPw}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-colors"
+                  >
+                    {savingPw ? 'Actualizando...' : 'Actualizar mi contraseña'}
+                  </button>
+                  {pwMsg && <span className={`text-sm ${pwMsg.error ? 'text-red-500' : 'text-green-400'}`}>{pwMsg.text}</span>}
                 </div>
               </form>
             </div>

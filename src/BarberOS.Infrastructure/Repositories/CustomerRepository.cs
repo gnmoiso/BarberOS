@@ -40,5 +40,8 @@ internal sealed class CustomerRepository(AppDbContext db) : ICustomerRepository
     public Task<List<string>> ListAllPhonesAsync(CancellationToken ct) =>
         db.Customers.Select(c => c.Phone).ToListAsync(ct);
 
+    public Task<List<Customer>> ListAllAsync(CancellationToken ct) =>
+        db.Customers.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+
     public void Add(Customer customer) => db.Customers.Add(customer);
 }
