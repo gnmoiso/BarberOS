@@ -4,6 +4,7 @@ import { Scissors, KeyRound, QrCode } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
+import { JoinSuccessOverlay } from '@/components/JoinSuccessOverlay'
 
 export default function JoinBarbershopPage() {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ export default function JoinBarbershopPage() {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [joinedTenant, setJoinedTenant] = useState<string | null>(null)
 
   async function joinByCode(e: React.FormEvent) {
     e.preventDefault()
@@ -29,7 +31,7 @@ export default function JoinBarbershopPage() {
     try {
       const tokens = await call()
       setTokens(tokens)
-      navigate('/user/dashboard')
+      setJoinedTenant(tokens.tenantName ?? 'tu nueva barbería')
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? err?.response?.data?.title ?? 'Código inválido o inactivo')
     } finally {
@@ -43,6 +45,13 @@ export default function JoinBarbershopPage() {
     if (token) joinByToken(token)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Auto-advance so the celebration doesn't strand someone who never taps "Continuar".
+  useEffect(() => {
+    if (!joinedTenant) return
+    const t = setTimeout(() => navigate('/user/dashboard'), 3500)
+    return () => clearTimeout(t)
+  }, [joinedTenant, navigate])
 
   function handleScan(payload: string) {
     const token = extractInviteToken(payload)
@@ -132,6 +141,10 @@ export default function JoinBarbershopPage() {
           </div>
         )}
       </div>
+
+      {joinedTenant && (
+        <JoinSuccessOverlay tenantName={joinedTenant} onContinue={() => navigate('/user/dashboard')} />
+      )}
     </div>
   )
 }

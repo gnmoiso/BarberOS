@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Building2, CheckCircle2, ArrowRight, Check, QrCode } from 'lucide-react'
+import { KeyRound, Building2, ArrowRight, Check, QrCode } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
+import { JoinSuccessOverlay } from '@/components/JoinSuccessOverlay'
 import type { MyTenant } from '@/types'
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
@@ -17,7 +18,7 @@ export default function BarbershopCodePage() {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [joinedTenant, setJoinedTenant] = useState<string | null>(null)
   const [tenants, setTenants] = useState<MyTenant[]>([])
   const [tenantsLoading, setTenantsLoading] = useState(true)
 
@@ -28,14 +29,21 @@ export default function BarbershopCodePage() {
 
   useEffect(() => { loadTenants() }, [])
 
+  // Auto-dismiss so the celebration doesn't strand someone who never taps "Continuar".
+  useEffect(() => {
+    if (!joinedTenant) return
+    const t = setTimeout(() => setJoinedTenant(null), 3500)
+    return () => clearTimeout(t)
+  }, [joinedTenant])
+
   async function join(call: () => Promise<Awaited<ReturnType<typeof authService.joinBarbershop>>>) {
-    setError(''); setLoading(true); setSuccess(false)
+    setError(''); setLoading(true)
     try {
       const tokens = await call()
       setTokens(tokens)
-      setSuccess(true)
       setCode('')
       loadTenants()
+      setJoinedTenant(tokens.tenantName ?? 'tu nueva barbería')
     } catch (err: any) {
       setError(err?.response?.data?.title ?? 'Código inválido, inactivo o ya vinculado')
     } finally {
@@ -164,13 +172,11 @@ export default function BarbershopCodePage() {
             {error}
           </div>
         )}
-        {success && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-xl px-4 py-3 text-green-400 text-sm text-center flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Te uniste a la barberia y ahora es tu sesion activa
-          </div>
-        )}
       </div>
+
+      {joinedTenant && (
+        <JoinSuccessOverlay tenantName={joinedTenant} onContinue={() => setJoinedTenant(null)} />
+      )}
     </div>
   )
 }

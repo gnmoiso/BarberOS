@@ -9,12 +9,17 @@ export interface AuthTokens {
   accessToken: string
   refreshToken: string
   accessTokenExpiresAt: string
-  userId: string
-  fullName: string
-  email: string
-  role: string
+  // The join/join-by-token responses carry tenant info instead of user identity
+  // fields (the user was already authenticated before joining) — these are
+  // optional here and AuthContext.setTokens falls back to the previously
+  // stored user for whichever of these it doesn't get.
+  userId?: string
+  fullName?: string
+  email?: string
+  role?: string
   tenantId?: string | null
   tenantSlug?: string | null
+  tenantName?: string
   licensePending?: boolean
 }
 

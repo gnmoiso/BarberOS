@@ -18,15 +18,17 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-function tokensToUser(tokens: AuthTokens): User {
+function tokensToUser(tokens: AuthTokens, fallback?: User | null): User {
   return {
-    id: tokens.userId,
-    email: tokens.email,
-    fullName: tokens.fullName,
-    role: tokens.role,
-    tenantId: tokens.tenantId,
-    tenantSlug: tokens.tenantSlug,
-    licensePending: tokens.licensePending,
+    id: tokens.userId ?? fallback?.id ?? '',
+    email: tokens.email ?? fallback?.email ?? '',
+    fullName: tokens.fullName ?? fallback?.fullName ?? '',
+    role: tokens.role ?? fallback?.role ?? '',
+    tenantId: tokens.tenantId ?? fallback?.tenantId,
+    tenantSlug: tokens.tenantSlug ?? fallback?.tenantSlug,
+    licensePending: tokens.licensePending ?? fallback?.licensePending,
+    displayName: fallback?.displayName,
+    avatarUrl: fallback?.avatarUrl,
   }
 }
 
@@ -66,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     storage.setAccessToken(tokens.accessToken)
     storage.setRefreshToken(tokens.refreshToken)
     if (tokens.tenantId) storage.setTenantId(tokens.tenantId)
-    const u = tokensToUser(tokens)
+    const u = tokensToUser(tokens, storage.getUser())
     storage.setUser(u)
     setUser(u)
     return u
