@@ -24,6 +24,11 @@
        scrollbar/page shift. */
     overflow-x: hidden;
     max-width: 100vw;
+    /* Belt-and-suspenders against zoom: modern Android/iOS browsers deliberately ignore
+       the viewport meta's user-scalable=no for accessibility, so pinch-zoom can still
+       get through. `touch-action: pan-x pan-y` (no `zoom` keyword) blocks pinch-zoom and
+       double-tap-zoom at the CSS level while leaving normal scrolling/tapping untouched. */
+    touch-action: pan-x pan-y;
   }
   body {
     background-color: var(--color-primary);
