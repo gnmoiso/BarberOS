@@ -131,9 +131,9 @@ export default function ProfilePage() {
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
-        <div>
-          <p className="text-white font-bold">{form.displayName || form.fullName}</p>
-          <p className="text-zinc-500 text-sm">{form.email}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-white font-bold truncate">{form.displayName || form.fullName}</p>
+          <p className="text-zinc-500 text-sm truncate">{form.email}</p>
         </div>
       </div>
 
@@ -186,7 +186,7 @@ export default function ProfilePage() {
             className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
           />
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-4">
           <button
             type="submit"
             disabled={savingProfile}
@@ -237,7 +237,7 @@ export default function ProfilePage() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-4">
           <button
             type="submit"
             disabled={savingPw}

@@ -15,7 +15,7 @@ public sealed class BarbershipSettings : BaseAuditableEntity
     /// <summary>Base price when no service is selected.</summary>
     public decimal BasePriceNoService { get; private set; }
 
-    public string Currency { get; private set; } = "USD";
+    public string Currency { get; private set; } = "COP";
 
     // Optional add-ons defined by the barbershop
     public decimal BeardPrice { get; private set; }

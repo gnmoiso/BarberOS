@@ -19,7 +19,7 @@ type ServiceForm = Omit<CreateServiceRequest, 'price' | 'durationMinutes'> & {
 }
 
 const empty: ServiceForm = {
-  name: '', description: '', durationMinutes: undefined, price: undefined, currency: 'USD', category: '',
+  name: '', description: '', durationMinutes: undefined, price: undefined, currency: 'COP', category: '',
 }
 
 export default function ServicesPage() {
@@ -131,7 +131,7 @@ export default function ServicesPage() {
           <Input label="Descripción" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descripción opcional" />
           <div className="grid grid-cols-2 gap-3">
             <NumberInput label="Precio *" placeholder="0" value={form.price} onValueChange={v => setForm(p => ({ ...p, price: v }))} />
-            <Input label="Moneda" value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))} placeholder="USD" />
+            <Input label="Moneda" value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))} placeholder="COP" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <NumberInput label="Duración (min) *" placeholder="30" allowDecimal={false} value={form.durationMinutes} onValueChange={v => setForm(p => ({ ...p, durationMinutes: v }))} />

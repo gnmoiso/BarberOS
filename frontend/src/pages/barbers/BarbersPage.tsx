@@ -195,7 +195,7 @@ export default function BarbersPage() {
                   <Badge label={b.isActive ? 'Activo' : 'Inactivo'} variant={b.isActive ? 'success' : 'neutral'} />
                 </div>
               </div>
-              <div className="flex items-center gap-1 border-t border-slate-700 pt-2 -mx-1">
+              <div className="flex items-center flex-wrap gap-1 border-t border-slate-700 pt-2 -mx-1">
                 <button
                   onClick={() => openEdit(b)}
                   className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1.5 rounded-lg hover:bg-slate-700/50 cursor-pointer"
