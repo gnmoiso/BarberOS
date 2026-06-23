@@ -248,7 +248,7 @@ function BookingModal({ minBookableDate, onClose, onBooked }: { minBookableDate:
               ) : slots.length === 0 ? (
                 <p className="text-zinc-500 text-sm py-4 text-center">{emptySlotsReason()}</p>
               ) : (
-                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto">
                   {slots.map(s => (
                     <button
                       key={s.startsAt}

@@ -83,7 +83,7 @@ function ReactionSummary({ reactions }: { reactions: Reaction[] }) {
       </button>
 
       {showDetail && (
-        <div className="absolute bottom-full mb-2 left-0 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 shadow-xl z-10 space-y-1 min-w-[120px]">
+        <div className="absolute bottom-full mb-2 left-0 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 shadow-xl z-10 space-y-1 w-[min(120px,calc(100vw-3rem))]">
           {sorted.map(r => {
             const meta = REACTIONS.find(x => x.key === r.type)
             if (!meta) return null

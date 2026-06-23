@@ -18,6 +18,13 @@
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+  html, body {
+    /* Safety net against stray fixed-width/absolutely-positioned elements pushing the
+       page wider than the viewport on mobile — clip instead of producing a horizontal
+       scrollbar/page shift. */
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     background-color: var(--color-primary);
     color: var(--color-text);

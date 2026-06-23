@@ -75,6 +75,17 @@ public sealed class AuthController(ISender sender) : ControllerBase
         return Ok(response);
     }
 
+    // Used by the QR/deep-link join flow: the code's opaque id travels in the link instead
+    // of the human-readable code text, so scanning or sharing the link never reveals it.
+    [Authorize]
+    [HttpPost("join-by-token")]
+    public async Task<IActionResult> JoinBarbershopByToken([FromBody] JoinBarbershopByTokenRequest request, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var response = await sender.Send(new JoinBarbershopByTokenCommand(userId, request.CodeId), ct);
+        return Ok(response);
+    }
+
     [Authorize]
     [HttpGet("my-tenants")]
     public async Task<IActionResult> MyTenants(CancellationToken ct)
@@ -135,6 +146,7 @@ public sealed record RegisterBarberRequest(string Email, string FullName,
     string Password, string BarbershopName, string? Phone);
 public sealed record RegisterCustomerRequest(string Email, string FullName, string Password, string? Phone);
 public sealed record JoinBarbershopRequest(string InvitationCode);
+public sealed record JoinBarbershopByTokenRequest(Guid CodeId);
 public sealed record ActivateLicenseRequest(string LicenseCode);
 public sealed record UpdateProfileRequest(string FullName, string? DisplayName, string Email, string? Phone);
 public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);

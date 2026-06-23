@@ -716,11 +716,11 @@ export default function SuperAdminPage() {
                   <h1 className="text-2xl font-black text-white">Novedades</h1>
                   <p className="text-zinc-500 text-sm mt-1">Mira y participa en las publicaciones de cualquier barbería</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <select
                     value={novedadesTenantId}
                     onChange={e => setNovedadesTenantId(e.target.value)}
-                    className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600 min-w-[180px]"
+                    className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600 min-w-0 flex-1 sm:min-w-[180px] sm:flex-initial"
                   >
                     {tenants.length === 0 && <option value="">Sin barberías</option>}
                     {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}

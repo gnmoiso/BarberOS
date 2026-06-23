@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Scissors } from 'lucide-react'
 import { servicesService } from '@/services/services.service'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { NumberInput } from '@/components/ui/NumberInput'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
@@ -12,8 +13,13 @@ import { useConfirm } from '@/contexts/ConfirmContext'
 import { formatCOP } from '@/utils/currency'
 import type { Service, CreateServiceRequest } from '@/types'
 
-const empty: CreateServiceRequest = {
-  name: '', description: '', durationMinutes: 30, price: 0, currency: 'USD', category: '',
+type ServiceForm = Omit<CreateServiceRequest, 'price' | 'durationMinutes'> & {
+  price: number | undefined
+  durationMinutes: number | undefined
+}
+
+const empty: ServiceForm = {
+  name: '', description: '', durationMinutes: undefined, price: undefined, currency: 'USD', category: '',
 }
 
 export default function ServicesPage() {
@@ -22,7 +28,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Service | null>(null)
-  const [form, setForm] = useState<CreateServiceRequest>(empty)
+  const [form, setForm] = useState<ServiceForm>(empty)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,12 +46,17 @@ export default function ServicesPage() {
   }
 
   const handleSave = async () => {
+    if (form.price === undefined || form.durationMinutes === undefined) {
+      setError('Precio y duración son obligatorios')
+      return
+    }
+    const payload: CreateServiceRequest = { ...form, price: form.price, durationMinutes: form.durationMinutes }
     setSaving(true); setError(null)
     try {
       if (editing) {
-        await servicesService.update(editing.id, { ...form, isActive: editing.isActive, sortOrder: editing.sortOrder })
+        await servicesService.update(editing.id, { ...payload, isActive: editing.isActive, sortOrder: editing.sortOrder })
       } else {
-        await servicesService.create(form)
+        await servicesService.create(payload)
       }
       setModalOpen(false)
       load()
@@ -119,11 +130,11 @@ export default function ServicesPage() {
           <Input label="Nombre *" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Corte clásico" />
           <Input label="Descripción" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Descripción opcional" />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Precio *" type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: +e.target.value }))} />
+            <NumberInput label="Precio *" placeholder="0" value={form.price} onValueChange={v => setForm(p => ({ ...p, price: v }))} />
             <Input label="Moneda" value={form.currency} onChange={e => setForm(p => ({ ...p, currency: e.target.value }))} placeholder="USD" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Duración (min) *" type="number" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: +e.target.value }))} />
+            <NumberInput label="Duración (min) *" placeholder="30" allowDecimal={false} value={form.durationMinutes} onValueChange={v => setForm(p => ({ ...p, durationMinutes: v }))} />
             <Input label="Categoría" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} placeholder="Corte, Color..." />
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}

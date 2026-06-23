@@ -188,7 +188,7 @@ export default function AppointmentsPage() {
               return (
                 <motion.div
                   key={a.id}
-                  className="bg-slate-800 border border-slate-700 rounded-xl px-5 py-4 flex items-center gap-4"
+                  className="bg-slate-800 border border-slate-700 rounded-xl px-5 py-4 flex items-center flex-wrap gap-4"
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04 }}
@@ -205,7 +205,7 @@ export default function AppointmentsPage() {
                     <p className="text-sm font-semibold text-slate-100">{a.customerName}</p>
                     <p className="text-xs text-slate-400 mt-0.5">{a.serviceName} · {a.barberName}</p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center flex-wrap gap-3 shrink-0 sm:ml-auto">
                     <span className="text-sm font-semibold text-slate-300">${formatCOP(a.servicePrice)}</span>
                     <Badge label={statusLabel[a.status]} variant={statusVariant[a.status]} />
                     {next && (

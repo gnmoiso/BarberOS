@@ -1,29 +1,56 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Scissors, KeyRound } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Scissors, KeyRound, QrCode } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
+import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
 
 export default function JoinBarbershopPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { setTokens } = useAuth()
+  const [tab, setTab] = useState<'code' | 'qr'>('code')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function joinByCode(e: React.FormEvent) {
     e.preventDefault()
+    await runJoin(() => authService.joinBarbershop(code))
+  }
+
+  async function joinByToken(token: string) {
+    await runJoin(() => authService.joinBarbershopByToken(token))
+  }
+
+  async function runJoin(call: () => Promise<Awaited<ReturnType<typeof authService.joinBarbershop>>>) {
     setError('')
     setLoading(true)
     try {
-      const tokens = await authService.joinBarbershop(code)
+      const tokens = await call()
       setTokens(tokens)
       navigate('/user/dashboard')
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Código inválido o inactivo')
+      setError(err?.response?.data?.detail ?? err?.response?.data?.title ?? 'Código inválido o inactivo')
     } finally {
       setLoading(false)
     }
+  }
+
+  // Deep link from a shared QR/invite URL (e.g. opened straight from the phone's camera app).
+  useEffect(() => {
+    const token = searchParams.get('token')
+    if (token) joinByToken(token)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  function handleScan(payload: string) {
+    const token = extractInviteToken(payload)
+    if (!token) {
+      setError('El QR escaneado no es un código de invitación válido.')
+      return
+    }
+    joinByToken(token)
   }
 
   return (
@@ -39,38 +66,71 @@ export default function JoinBarbershopPage() {
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Unirte a una barbería</h1>
           <p className="text-zinc-400 text-sm">
-            Ingresa el código de invitación que te compartió tu barbero
+            Ingresa el código o escanea el QR que te compartió tu barbero
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="text"
-              value={code}
-              onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-              maxLength={10}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-4 text-white text-center text-2xl font-mono tracking-[0.4em] placeholder-zinc-600 focus:outline-none focus:border-red-600"
-              placeholder="XXXXXXXXXX"
-              required
-            />
-            <p className="text-zinc-600 text-xs text-center mt-2">10 caracteres alfanuméricos</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
-              {error}
-            </div>
-          )}
-
+        <div className="flex gap-2 mb-4 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
           <button
-            type="submit"
-            disabled={loading || code.length !== 10}
-            className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-600/30 text-white font-bold py-3.5 rounded-xl transition-colors"
+            type="button"
+            onClick={() => setTab('code')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${tab === 'code' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
           >
-            {loading ? 'Verificando...' : 'Unirme a la barbería'}
+            <KeyRound className="w-4 h-4" />
+            Código
           </button>
-        </form>
+          <button
+            type="button"
+            onClick={() => setTab('qr')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${tab === 'qr' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+          >
+            <QrCode className="w-4 h-4" />
+            Escanear QR
+          </button>
+        </div>
+
+        {tab === 'code' ? (
+          <form onSubmit={joinByCode} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                maxLength={10}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-4 text-white text-center text-2xl font-mono tracking-[0.4em] placeholder-zinc-600 focus:outline-none focus:border-red-600"
+                placeholder="XXXXXXXXXX"
+                required
+              />
+              <p className="text-zinc-600 text-xs text-center mt-2">10 caracteres alfanuméricos</p>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || code.length !== 10}
+              className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-600/30 text-white font-bold py-3.5 rounded-xl transition-colors"
+            >
+              {loading ? 'Verificando...' : 'Unirme a la barbería'}
+            </button>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <QrCodeReader onDecode={handleScan} />
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+            {loading && (
+              <p className="text-zinc-400 text-sm text-center">Verificando código...</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

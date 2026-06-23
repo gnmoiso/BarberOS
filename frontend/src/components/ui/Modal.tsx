@@ -27,19 +27,19 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             onClick={onClose}
           />
           <motion.div
-            className={`relative w-full ${sizes[size]} bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl`}
+            className={`relative w-full ${sizes[size]} max-h-[90vh] flex flex-col bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl`}
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.3 }}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700 shrink-0">
               <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
               <button onClick={onClose} className="text-slate-400 hover:text-slate-200 transition-colors cursor-pointer">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6">{children}</div>
+            <div className="p-6 overflow-y-auto">{children}</div>
           </motion.div>
         </motion.div>
       )}

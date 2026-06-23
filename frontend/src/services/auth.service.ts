@@ -17,6 +17,9 @@ export const authService = {
   joinBarbershop: (invitationCode: string) =>
     api.post<AuthTokens>('/auth/join', { invitationCode }).then(r => r.data),
 
+  joinBarbershopByToken: (codeId: string) =>
+    api.post<AuthTokens>('/auth/join-by-token', { codeId }).then(r => r.data),
+
   myTenants: () =>
     api.get<MyTenant[]>('/auth/my-tenants').then(r => r.data),
 

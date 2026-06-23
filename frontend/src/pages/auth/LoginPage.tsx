@@ -39,7 +39,10 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname
+  // Keep the search string (e.g. ?token=... from a QR/invite deep link) so redirecting
+  // back after login doesn't strip it.
+  const fromLocation = (location.state as { from?: { pathname: string; search?: string } })?.from
+  const from = fromLocation && `${fromLocation.pathname}${fromLocation.search ?? ''}`
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)

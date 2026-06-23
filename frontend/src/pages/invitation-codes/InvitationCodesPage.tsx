@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Copy, Plus, Trash2, Key, CheckCircle, XCircle } from 'lucide-react'
+import { Copy, Plus, Trash2, Key, CheckCircle, XCircle, QrCode, Download, X } from 'lucide-react'
+import QRCode from 'qrcode'
 import { api } from '@/services/api'
 import { useConfirm } from '@/contexts/ConfirmContext'
 
@@ -11,6 +12,59 @@ interface InvitationCode {
   usageCount: number
 }
 
+function joinUrlFor(codeId: string) {
+  // The link carries the code's opaque id, never the readable code text, so sharing
+  // or scanning it never exposes the barbershop's invitation code in plain sight.
+  return `${window.location.origin}/join?token=${codeId}`
+}
+
+function QrModal({ codeId, onClose }: { codeId: string; onClose: () => void }) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    QRCode.toDataURL(joinUrlFor(codeId), { width: 320, margin: 2, color: { dark: '#18181b', light: '#ffffff' } })
+      .then(setDataUrl)
+  }, [codeId])
+
+  function download() {
+    if (!dataUrl) return
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = 'invitacion-barberos.png'
+    a.click()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] p-4" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <p className="text-white font-bold text-sm">Codigo QR de invitacion</p>
+          <button onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="bg-white rounded-xl p-4 flex items-center justify-center min-h-[260px]">
+          {dataUrl
+            ? <img src={dataUrl} alt="Codigo QR" className="w-full h-auto" />
+            : <div className="w-8 h-8 border-2 border-zinc-300 border-t-transparent rounded-full animate-spin" />
+          }
+        </div>
+        <p className="text-zinc-500 text-xs text-center">
+          Quien escanee este QR (o abra el enlace) podra unirse directamente a tu barberia, sin ver el codigo.
+        </p>
+        <button
+          onClick={download}
+          disabled={!dataUrl}
+          className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+        >
+          <Download className="w-4 h-4" />
+          Descargar QR
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function InvitationCodesPage() {
   const confirmDialog = useConfirm()
   const [codes, setCodes] = useState<InvitationCode[]>([])
@@ -19,6 +73,7 @@ export default function InvitationCodesPage() {
   const [newCode, setNewCode] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [qrFor, setQrFor] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -132,6 +187,15 @@ export default function InvitationCodesPage() {
                 )}
                 {c.isActive && (
                   <button
+                    onClick={() => setQrFor(c.id)}
+                    className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
+                    title="Ver QR"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-zinc-400" />
+                  </button>
+                )}
+                {c.isActive && (
+                  <button
                     onClick={() => deactivate(c.id)}
                     className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-red-500/10 flex items-center justify-center transition-colors group"
                     title="Desactivar"
@@ -144,6 +208,8 @@ export default function InvitationCodesPage() {
           ))}
         </div>
       )}
+
+      {qrFor && <QrModal codeId={qrFor} onClose={() => setQrFor(null)} />}
     </div>
   )
 }

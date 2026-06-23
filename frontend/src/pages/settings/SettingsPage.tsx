@@ -22,15 +22,18 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
 }
 
 interface BarbershipSettings {
-  daysAheadNormalUser: number
-  basePriceNoService: number
+  // Left `undefined`-able so the inputs can be fully cleared mid-edit instead of
+  // snapping back to a literal 0/20 the moment the field is empty; save() fills in
+  // the real defaults if the user leaves one blank.
+  daysAheadNormalUser: number | undefined
+  basePriceNoService: number | undefined
   currency: string
   beardPrice?: number
   eyebrowPrice?: number
   washPrice?: number
   address?: string
   ownerName?: string
-  reminderMinutesBeforeAppointment: number
+  reminderMinutesBeforeAppointment: number | undefined
   minLeadMinutes: number
   logoUrl?: string | null
 }
@@ -41,6 +44,33 @@ const empty: BarbershipSettings = {
   currency: 'COP',
   reminderMinutesBeforeAppointment: 20,
   minLeadMinutes: 30,
+}
+
+function NumField({ value, onValueChange, allowDecimal = true, className = '', ...props }: {
+  value: number | undefined
+  onValueChange: (v: number | undefined) => void
+  allowDecimal?: boolean
+  className?: string
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'>) {
+  const [text, setText] = useState(value === undefined ? '' : String(value))
+
+  useEffect(() => { setText(value === undefined ? '' : String(value)) }, [value])
+
+  return (
+    <input
+      type="text"
+      inputMode={allowDecimal ? 'decimal' : 'numeric'}
+      value={text}
+      onChange={e => {
+        const pattern = allowDecimal ? /[^0-9.]/g : /[^0-9]/g
+        const raw = e.target.value.replace(pattern, '')
+        setText(raw)
+        onValueChange(raw === '' || raw === '.' ? undefined : Number(raw))
+      }}
+      className={`bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600 ${className}`}
+      {...props}
+    />
+  )
 }
 
 export default function SettingsPage() {
@@ -90,7 +120,12 @@ export default function SettingsPage() {
     e.preventDefault()
     setSaving(true); setMsg(null)
     try {
-      await api.put('/barbership-settings', form)
+      await api.put('/barbership-settings', {
+        ...form,
+        daysAheadNormalUser: form.daysAheadNormalUser ?? 0,
+        basePriceNoService: form.basePriceNoService ?? 0,
+        reminderMinutesBeforeAppointment: form.reminderMinutesBeforeAppointment ?? 20,
+      })
       setMsg({ text: 'Ajustes guardados', error: false })
     } catch {
       setMsg({ text: 'Error al guardar', error: true })
@@ -220,12 +255,12 @@ export default function SettingsPage() {
           </p>
           <div>
             <label className="block text-xs text-zinc-500 mb-1.5">Días de anticipación</label>
-            <input
-              type="number"
-              min={0}
+            <NumField
+              allowDecimal={false}
+              placeholder="0"
               value={form.daysAheadNormalUser}
-              onChange={e => set('daysAheadNormalUser')(parseInt(e.target.value, 10) || 0)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
+              onValueChange={set('daysAheadNormalUser')}
+              className="w-full"
             />
           </div>
 
@@ -255,13 +290,12 @@ export default function SettingsPage() {
             Cuántos minutos antes de cada cita quieres recibir la alerta de recordatorio en tu panel.
           </p>
           <div className="flex items-center gap-3">
-            <input
-              type="number"
-              min={1}
-              max={1440}
+            <NumField
+              allowDecimal={false}
+              placeholder="20"
               value={form.reminderMinutesBeforeAppointment}
-              onChange={e => set('reminderMinutesBeforeAppointment')(parseInt(e.target.value, 10) || 1)}
-              className="w-28 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+              onValueChange={set('reminderMinutesBeforeAppointment')}
+              className="w-28 focus:border-blue-500"
             />
             <span className="text-zinc-400 text-sm">minutos antes</span>
           </div>
@@ -271,16 +305,14 @@ export default function SettingsPage() {
           <h2 className="text-white font-bold text-sm flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-red-600" /> Precios
           </h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-zinc-500 mb-1.5">Precio base (sin servicio)</label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
+              <NumField
+                placeholder="0"
                 value={form.basePriceNoService}
-                onChange={e => set('basePriceNoService')(parseFloat(e.target.value) || 0)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
+                onValueChange={set('basePriceNoService')}
+                className="w-full"
               />
             </div>
             <div>
@@ -295,37 +327,28 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-xs text-zinc-500 mb-1.5">Barba (opcional)</label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.beardPrice ?? ''}
-                onChange={e => set('beardPrice')(e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
+              <NumField
+                value={form.beardPrice}
+                onValueChange={set('beardPrice')}
+                className="w-full"
                 placeholder="Sin costo adicional"
               />
             </div>
             <div>
               <label className="block text-xs text-zinc-500 mb-1.5">Cejas (opcional)</label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.eyebrowPrice ?? ''}
-                onChange={e => set('eyebrowPrice')(e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
+              <NumField
+                value={form.eyebrowPrice}
+                onValueChange={set('eyebrowPrice')}
+                className="w-full"
                 placeholder="Sin costo adicional"
               />
             </div>
             <div>
               <label className="block text-xs text-zinc-500 mb-1.5">Lavado (opcional)</label>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={form.washPrice ?? ''}
-                onChange={e => set('washPrice')(e.target.value ? parseFloat(e.target.value) : undefined)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-600"
+              <NumField
+                value={form.washPrice}
+                onValueChange={set('washPrice')}
+                className="w-full"
                 placeholder="Sin costo adicional"
               />
             </div>

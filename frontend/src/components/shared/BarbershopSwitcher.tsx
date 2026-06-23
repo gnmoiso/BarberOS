@@ -58,7 +58,7 @@ export function BarbershopSwitcher() {
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 left-0 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-20 min-w-[220px] py-1.5 overflow-hidden">
+        <div className="absolute top-full mt-2 left-0 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-20 w-[min(220px,calc(100vw-2rem))] py-1.5 overflow-hidden">
           {tenants.map(t => (
             <button
               key={t.tenantId}

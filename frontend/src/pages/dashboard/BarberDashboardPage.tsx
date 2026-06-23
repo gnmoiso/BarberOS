@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Star, Clock, DollarSign, Bell, Scissors, Users, Newspaper, UserCheck, Settings, Radio, Volume2, VolumeX } from 'lucide-react'
+import { Calendar, Star, Clock, DollarSign, Bell, Scissors, Users, Newspaper, UserCheck, Settings, Radio, Volume2, VolumeX, Key } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -116,14 +116,14 @@ export default function BarberDashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-white">Hola, {user?.displayName || user?.fullName?.split(' ')[0]}</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black text-white truncate">Hola, {user?.displayName || user?.fullName?.split(' ')[0]}</h1>
           <p className="text-zinc-400 text-sm mt-1">
             {new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <div className="flex items-center gap-1.5 text-xs text-green-400 bg-green-500/10 px-2.5 py-1.5 rounded-lg" title="Actualización en tiempo real activa">
             <Radio className={`w-3.5 h-3.5 ${justUpdated ? 'animate-pulse' : ''}`} />
             En vivo
@@ -155,12 +155,13 @@ export default function BarberDashboardPage() {
         <StatCard icon={Star} label="Valoración" value={rating?.count ? `${rating.averageStars.toFixed(1)} ★` : '—'} accent="bg-purple-500/10 text-purple-400" />
       </div>
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
         <QuickLink to="/barberia/appointments" icon={Calendar} label="Citas" />
         <QuickLink to="/barberia/clients" icon={Users} label="Clientes" />
         <QuickLink to="/barberia/barbers" icon={UserCheck} label="Equipo" />
         <QuickLink to="/barberia/posts" icon={Newspaper} label="Novedades" />
         <QuickLink to="/barberia/services" icon={Scissors} label="Servicios" />
+        <QuickLink to="/barberia/invitation-codes" icon={Key} label="Codigos" />
         <QuickLink to="/barberia/settings" icon={Settings} label="Ajustes" />
       </div>
 

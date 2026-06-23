@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Building2, CheckCircle2, ArrowRight, Check } from 'lucide-react'
+import { KeyRound, Building2, CheckCircle2, ArrowRight, Check, QrCode } from 'lucide-react'
 import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
+import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
 import type { MyTenant } from '@/types'
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
@@ -12,6 +13,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
 
 export default function BarbershopCodePage() {
   const { user, setTokens } = useAuth()
+  const [tab, setTab] = useState<'code' | 'qr'>('code')
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,12 +28,10 @@ export default function BarbershopCodePage() {
 
   useEffect(() => { loadTenants() }, [])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (code.length !== 10) return
+  async function join(call: () => Promise<Awaited<ReturnType<typeof authService.joinBarbershop>>>) {
     setError(''); setLoading(true); setSuccess(false)
     try {
-      const tokens = await authService.joinBarbershop(code)
+      const tokens = await call()
       setTokens(tokens)
       setSuccess(true)
       setCode('')
@@ -41,6 +41,21 @@ export default function BarbershopCodePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (code.length !== 10) return
+    await join(() => authService.joinBarbershop(code))
+  }
+
+  function handleScan(payload: string) {
+    const token = extractInviteToken(payload)
+    if (!token) {
+      setError('El QR escaneado no es un código de invitación válido.')
+      return
+    }
+    join(() => authService.joinBarbershopByToken(token))
   }
 
   return (
@@ -93,21 +108,56 @@ export default function BarbershopCodePage() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2">
           <KeyRound className="w-4 h-4 text-red-600" />
           <h2 className="text-white font-bold text-sm">Vincular nueva barberia</h2>
         </div>
-        <input
-          type="text"
-          value={code}
-          onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-          maxLength={10}
-          className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-4 text-white text-center text-xl font-mono tracking-[0.3em] placeholder-zinc-600 focus:outline-none focus:border-red-600"
-          placeholder="XXXXXXXXXX"
-          required
-        />
-        <p className="text-zinc-600 text-xs text-center">{code.length}/10 caracteres</p>
+
+        <div className="flex gap-2 bg-zinc-800 border border-zinc-700 rounded-xl p-1">
+          <button
+            type="button"
+            onClick={() => setTab('code')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${tab === 'code' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+          >
+            <KeyRound className="w-4 h-4" />
+            Código
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('qr')}
+            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${tab === 'qr' ? 'bg-red-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+          >
+            <QrCode className="w-4 h-4" />
+            Escanear QR
+          </button>
+        </div>
+
+        {tab === 'code' ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="text"
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              maxLength={10}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-4 text-white text-center text-xl font-mono tracking-[0.3em] placeholder-zinc-600 focus:outline-none focus:border-red-600"
+              placeholder="XXXXXXXXXX"
+              required
+            />
+            <p className="text-zinc-600 text-xs text-center">{code.length}/10 caracteres</p>
+
+            <button
+              type="submit"
+              disabled={loading || code.length !== 10}
+              className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-600/30 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {loading ? 'Verificando...' : 'Sincronizar barberia'}
+              {!loading && <ArrowRight className="w-4 h-4" />}
+            </button>
+          </form>
+        ) : (
+          <QrCodeReader onDecode={handleScan} />
+        )}
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm text-center">
@@ -120,16 +170,7 @@ export default function BarbershopCodePage() {
             Te uniste a la barberia y ahora es tu sesion activa
           </div>
         )}
-
-        <button
-          type="submit"
-          disabled={loading || code.length !== 10}
-          className="w-full bg-red-600 hover:bg-red-500 disabled:bg-red-600/30 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
-        >
-          {loading ? 'Verificando...' : 'Sincronizar barberia'}
-          {!loading && <ArrowRight className="w-4 h-4" />}
-        </button>
-      </form>
+      </div>
     </div>
   )
 }
