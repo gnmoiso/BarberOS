@@ -19,11 +19,15 @@ internal sealed class RegisterBarberCommandHandler(
 {
     public async Task<RegisterBarberResponse> Handle(RegisterBarberCommand cmd, CancellationToken ct)
     {
-        PhoneValidation.EnsureValidIfProvided(cmd.Phone);
+        PhoneValidation.EnsureValid(cmd.Phone);
 
         var existing = await users.FindByEmailAsync(cmd.Email, ct);
         if (existing is not null)
             throw new ConflictException("auth.email_taken", "Ya existe una cuenta con ese correo.");
+
+        var phoneTaken = await users.FindByPhoneAsync(cmd.Phone!, ct);
+        if (phoneTaken is not null)
+            throw new ConflictException("auth.phone_taken", "Ya existe una cuenta con ese teléfono.");
 
         // Tenant is created without a license: the barber must activate one afterwards
         // from the "Contact BarberOS" screen before the full panel unlocks.

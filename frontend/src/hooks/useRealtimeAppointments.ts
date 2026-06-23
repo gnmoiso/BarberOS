@@ -70,12 +70,20 @@ export function useRealtimeAppointments(onEvent: (eventName: string, payload: un
   }, [isAuthenticated, user?.tenantId])
 }
 
+export interface PostsChangedPayload {
+  reason: 'created' | 'deleted' | 'reaction' | 'comment'
+  postId: string | null
+}
+
 /**
  * Same shared connection, listening for "PostsChanged" — fired after any post/comment/reaction
  * mutation, including platform-wide announcements broadcast to every connection's "all" group
  * (23.12.3/23.12.4/23.12.5). Works for customers too, who have no tenant_id requirement to join.
+ *
+ * Carries which post changed and why, so the caller can patch just that post (Facebook-style
+ * incremental update) instead of re-fetching and re-rendering the entire feed on every reaction.
  */
-export function usePostsRealtime(onEvent: () => void) {
+export function usePostsRealtime(onEvent: (payload: PostsChangedPayload) => void) {
   const { isAuthenticated } = useAuth()
   const onEventRef = useRef(onEvent)
   onEventRef.current = onEvent
@@ -84,9 +92,9 @@ export function usePostsRealtime(onEvent: () => void) {
     if (!isAuthenticated) return
 
     const connection = getRealtimeConnection()
-    const handler = () => {
+    const handler = (payload: PostsChangedPayload) => {
       playChime()
-      onEventRef.current()
+      onEventRef.current(payload)
     }
     connection.on('PostsChanged', handler)
 

@@ -5,6 +5,7 @@ namespace BarberOS.Application.Abstractions.Repositories;
 public interface IUserRepository
 {
     Task<User?> FindByEmailAsync(string email, CancellationToken ct = default);
+    Task<User?> FindByPhoneAsync(string phone, CancellationToken ct = default);
     Task<User?> FindByIdWithRolesAsync(Guid id, CancellationToken ct = default);
     Task<List<User>> FindManyWithRolesAsync(IEnumerable<Guid> ids, CancellationToken ct = default);
 

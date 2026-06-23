@@ -12,6 +12,9 @@ using BarberOS.Application.SuperAdmin.Queries.ListLicenses;
 using BarberOS.Application.SuperAdmin.Queries.ListTenantMembers;
 using BarberOS.Application.SuperAdmin.Queries.ListTenants;
 using BarberOS.Application.SuperAdmin.Queries.ListAllCustomers;
+using BarberOS.Application.SuperAdmin.Commands.DeleteLicense;
+using BarberOS.Application.SuperAdmin.Commands.DeleteTenant;
+using BarberOS.Application.SuperAdmin.Commands.DeleteCustomer;
 using BarberOS.Application.SuperAdmin.Queries.ListTestimonials;
 using BarberOS.Application.SuperAdmin.Queries.AuditPhones;
 using BarberOS.Application.Posts.Queries.ListPosts;
@@ -54,6 +57,15 @@ public sealed class SuperAdminController(ISender sender, IHubContext<Appointment
         return NoContent();
     }
 
+    // Si la licencia estaba asignada a una barbería, el barbero pierde acceso de inmediato
+    // (TenantResolutionMiddleware revisa el estado de la licencia en cada request).
+    [HttpDelete("licenses/{id:guid}")]
+    public async Task<IActionResult> DeleteLicense(Guid id, CancellationToken ct)
+    {
+        await sender.Send(new DeleteLicenseCommand(id), ct);
+        return NoContent();
+    }
+
     // Tenants (barbershops)
     [HttpGet("tenants")]
     public async Task<IActionResult> ListTenants(CancellationToken ct) =>
@@ -63,10 +75,24 @@ public sealed class SuperAdminController(ISender sender, IHubContext<Appointment
     public async Task<IActionResult> ListTenantMembers(Guid tenantId, CancellationToken ct) =>
         Ok(await sender.Send(new ListTenantMembersQuery(tenantId), ct));
 
+    [HttpDelete("tenants/{tenantId:guid}")]
+    public async Task<IActionResult> DeleteTenant(Guid tenantId, CancellationToken ct)
+    {
+        await sender.Send(new DeleteTenantCommand(tenantId), ct);
+        return NoContent();
+    }
+
     // Clientes — vista global de todos los clientes de todas las barberías.
     [HttpGet("customers")]
     public async Task<IActionResult> ListAllCustomers(CancellationToken ct) =>
         Ok(await sender.Send(new ListAllCustomersQuery(), ct));
+
+    [HttpDelete("customers/{customerId:guid}")]
+    public async Task<IActionResult> DeleteCustomer(Guid customerId, CancellationToken ct)
+    {
+        await sender.Send(new DeleteCustomerCommand(customerId), ct);
+        return NoContent();
+    }
 
     // 23.17.5 — diagnostic over existing phone data registered before the 10-digit rule existed.
     [HttpGet("phone-audit")]
@@ -83,7 +109,7 @@ public sealed class SuperAdminController(ISender sender, IHubContext<Appointment
     public async Task<IActionResult> CreateGlobalPost([FromBody] CreateGlobalPostRequest req, CancellationToken ct)
     {
         var id = await sender.Send(new CreatePostCommand(Guid.Empty, UserId, req.Content, req.ImageUrl), ct);
-        await hub.Clients.Group(AppointmentsHub.AllGroup).SendAsync("PostsChanged", cancellationToken: ct);
+        await hub.Clients.Group(AppointmentsHub.AllGroup).SendAsync("PostsChanged", new { reason = "created", postId = id }, cancellationToken: ct);
         return Ok(new { id });
     }
 

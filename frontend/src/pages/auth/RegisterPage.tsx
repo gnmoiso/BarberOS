@@ -39,7 +39,7 @@ export default function RegisterPage() {
   async function handleBarberSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const phoneError = validatePhone(barberForm.phone)
+    const phoneError = validatePhone(barberForm.phone, true)
     if (phoneError) { setError(phoneError); return }
     setLoading(true)
     try {
@@ -56,7 +56,7 @@ export default function RegisterPage() {
   async function handleCustomerSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const phoneError = validatePhone(customerForm.phone)
+    const phoneError = validatePhone(customerForm.phone, true)
     if (phoneError) { setError(phoneError); return }
     setLoading(true)
     try {
@@ -74,11 +74,14 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
+          <Link to="/" className="text-zinc-400 hover:text-white text-sm mb-6 inline-flex items-center gap-1.5">
+            ← Volver al inicio
+          </Link>
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 mb-4">
+            <Link to="/" className="inline-flex items-center gap-2 mb-4">
               <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8" />
               <span className="text-white font-bold text-2xl">BarberOS</span>
-            </div>
+            </Link>
             <h1 className="text-3xl font-bold text-white mb-2">Crear cuenta</h1>
             <p className="text-zinc-400">¿Cómo quieres usar BarberOS?</p>
           </div>
@@ -146,7 +149,9 @@ export default function RegisterPage() {
           <button onClick={() => setMode('select')} className="text-zinc-400 hover:text-white text-sm mb-4 block mx-auto">
             ← Volver
           </button>
-          <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8 mx-auto mb-3" />
+          <Link to="/" className="inline-block">
+            <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8 mx-auto mb-3" />
+          </Link>
           <h1 className="text-2xl font-bold text-white">
             {isBarber ? 'Registrar barbería' : 'Crear cuenta de cliente'}
           </h1>
@@ -196,7 +201,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm text-zinc-400 mb-1">Teléfono (opcional)</label>
+            <label className="block text-sm text-zinc-400 mb-1">Teléfono *</label>
             <input
               type="tel"
               inputMode="numeric"
@@ -208,6 +213,7 @@ export default function RegisterPage() {
               }}
               className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-red-600"
               placeholder="3001234567"
+              required
             />
           </div>
 

@@ -21,6 +21,11 @@ internal sealed class UserRepository(AppDbContext db) : IUserRepository
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email == email.ToLowerInvariant() && !u.IsDeleted, ct);
 
+    public Task<User?> FindByPhoneAsync(string phone, CancellationToken ct) =>
+        db.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Phone == phone && !u.IsDeleted, ct);
+
     public Task<User?> FindByIdWithRolesAsync(Guid id, CancellationToken ct) =>
         db.Users
             .IgnoreQueryFilters()

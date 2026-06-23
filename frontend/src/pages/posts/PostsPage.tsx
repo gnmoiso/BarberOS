@@ -5,6 +5,7 @@ import { uploadsService } from '@/services/uploads.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { usePostsRealtime } from '@/hooks/useRealtimeAppointments'
+import { TimeAgo } from '@/components/TimeAgo'
 
 interface Reaction { type: string; count: number; viewerReacted: boolean }
 interface Comment {
@@ -227,6 +228,7 @@ function CommentBlock({ comment, postId, onRefresh }: { comment: Comment; postId
           <p className="text-zinc-300 text-sm">{comment.text}</p>
         </div>
         <div className="flex items-center gap-3 mt-1 ml-2">
+          <TimeAgo iso={comment.createdAt} className="text-zinc-600 text-xs" />
           <CommentReactionPicker comment={comment} onRefresh={onRefresh} />
           <button onClick={() => setReplying(v => !v)} className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
             Responder
@@ -294,9 +296,7 @@ function PostCard({ post, onReact, onRefresh, canDelete, onDelete }: {
                   {post.tenantName}
                 </span>
               </div>
-              <p className="text-zinc-500 text-xs">
-                {new Date(post.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-              </p>
+              <TimeAgo iso={post.createdAt} className="text-zinc-500 text-xs" />
             </div>
           </div>
           {canDelete && (
@@ -367,40 +367,56 @@ export default function PostsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isBarber = user?.role === 'Barber'
 
-  // `load` only flips the full-page spinner for the very first fetch. Every later refresh
-  // (after reacting, commenting, deleting, or a SignalR push) goes through `refresh`, which
-  // swaps the `posts` array in place without ever unmounting the list — toggling `loading`
-  // on every action was collapsing the page to a spinner and snapping scroll back to the top
-  // on each interaction (23.12.6).
+  // `load` only flips the full-page spinner for the very first fetch. Every later update
+  // (own action or a SignalR push from someone else) patches just the one post that changed
+  // instead of replacing the whole array — a full refetch-and-replace was what caused every
+  // PostCard (avatars, images, reaction bars) to flicker/re-render on every single reaction
+  // or comment, anywhere in the feed.
   async function load() {
     setLoading(true)
     try {
-      await refresh()
-    } finally {
+      const r = await api.get('/posts')
+      setPosts(r.data ?? [])
+    } catch { /* keep showing the previous list on a failed initial load */ }
+    finally {
       setLoading(false)
     }
   }
 
-  async function refresh() {
+  async function patchPost(postId: string) {
     try {
-      const r = await api.get('/posts')
-      setPosts(r.data ?? [])
-    } catch { /* keep showing the previous list on a failed background refresh */ }
+      const r = await api.get(`/posts/${postId}`)
+      setPosts(prev => {
+        const idx = prev.findIndex(p => p.id === postId)
+        if (idx === -1) return [r.data, ...prev]
+        const next = [...prev]
+        next[idx] = r.data
+        return next
+      })
+    } catch { /* the post may have just been deleted by someone else — handled by the 'deleted' event */ }
+  }
+
+  function removePost(postId: string) {
+    setPosts(prev => prev.filter(p => p.id !== postId))
   }
 
   useEffect(() => { load() }, [])
 
-  usePostsRealtime(() => refresh())
+  usePostsRealtime(({ reason, postId }) => {
+    if (!postId) return
+    if (reason === 'deleted') removePost(postId)
+    else patchPost(postId)
+  })
 
   async function handleReact(postId: string, type: number) {
     await api.post(`/posts/${postId}/reactions`, { type })
-    refresh()
+    patchPost(postId)
   }
 
   async function handleDelete(postId: string) {
     if (!await confirmDialog('Eliminar esta publicación? Esta acción no se puede deshacer.')) return
     await api.delete(`/posts/${postId}`)
-    refresh()
+    removePost(postId)
   }
 
   async function uploadPostImage(file: File) {
@@ -432,8 +448,9 @@ export default function PostsPage() {
     if (!newContent.trim()) return
     setCreating(true)
     try {
-      await api.post('/posts', { content: newContent.trim(), imageUrl: newImageUrl })
-      setNewContent(''); setNewImageUrl(null); setShowCreate(false); refresh()
+      const r = await api.post('/posts', { content: newContent.trim(), imageUrl: newImageUrl })
+      setNewContent(''); setNewImageUrl(null); setShowCreate(false)
+      patchPost(r.data.id)
     } finally { setCreating(false) }
   }
 
@@ -546,7 +563,7 @@ export default function PostsPage() {
           )
         }
         return visible.map(p => (
-          <PostCard key={p.id} post={p} onReact={handleReact} onRefresh={refresh} canDelete={p.authorId === user?.id || user?.role === 'SuperAdmin'} onDelete={handleDelete} />
+          <PostCard key={p.id} post={p} onReact={handleReact} onRefresh={() => patchPost(p.id)} canDelete={p.authorId === user?.id || user?.role === 'SuperAdmin'} onDelete={handleDelete} />
         ))
       })()}
     </div>

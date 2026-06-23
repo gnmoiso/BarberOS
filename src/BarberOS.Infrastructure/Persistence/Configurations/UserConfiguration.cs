@@ -20,6 +20,10 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsSuperAdmin).HasDefaultValue(false);
 
         builder.HasIndex(u => u.Email).IsUnique().HasFilter("\"IsDeleted\" = false");
+        // Phone is required at registration (PhoneValidation.EnsureValid) but the column stays
+        // nullable for legacy/system rows — the filter also excludes NULL so multiple users
+        // without a phone don't collide on the unique constraint.
+        builder.HasIndex(u => u.Phone).IsUnique().HasFilter("\"IsDeleted\" = false AND \"Phone\" IS NOT NULL");
 
         builder.HasMany(u => u.RefreshTokens)
             .WithOne()

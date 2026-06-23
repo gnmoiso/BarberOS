@@ -62,6 +62,16 @@ public sealed class Tenant : BaseGlobalAuditableEntity
     public void Activate() => Status = TenantStatus.Active;
     public void Suspend() => Status = TenantStatus.Suspended;
 
+    /// <summary>Clears the license — used when SuperAdmin deletes the license assigned to this
+    /// tenant. The barber loses panel access on their very next request (enforced per-request in
+    /// TenantResolutionMiddleware, not just at login), not just at their next token refresh.</summary>
+    public void RevokeLicense()
+    {
+        LicenseCode = null;
+        LicenseExpiresAt = null;
+        Status = TenantStatus.PendingLicense;
+    }
+
     public static string ToSlug(string text) =>
         text.Trim().ToLowerInvariant()
             .Replace(" ", "-")

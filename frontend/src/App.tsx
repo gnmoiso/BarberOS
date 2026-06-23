@@ -10,6 +10,7 @@ import { useFavicon } from '@/hooks/useFavicon'
 const HomePage = lazy(() => import('@/pages/home/HomePage'))
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
 const ContactBarberOSPage = lazy(() => import('@/pages/auth/ContactBarberOSPage'))
 const JoinBarbershopPage = lazy(() => import('@/pages/auth/JoinBarbershopPage'))
 const SuperAdminPage = lazy(() => import('@/pages/superadmin/SuperAdminPage'))
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<RequireGuest><LoginPage /></RequireGuest>} />
             <Route path="/register" element={<RequireGuest><RegisterPage /></RequireGuest>} />
+            <Route path="/forgot-password" element={<RequireGuest><ForgotPasswordPage /></RequireGuest>} />
 
             {/* Post-registro barber (requiere auth) */}
             <Route path="/contact-barberos" element={<RequireAuth><ContactBarberOSPage /></RequireAuth>} />

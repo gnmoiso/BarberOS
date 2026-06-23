@@ -300,6 +300,27 @@ export default function SuperAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
+  async function deleteCustomer(c: PlatformCustomer) {
+    if (!await confirmDialog(`Quitar a ${c.fullName} de ${c.tenantName}? Esta acción no se puede deshacer.`, { confirmLabel: 'Quitar' })) return
+    await api.delete(`/super-admin/customers/${c.id}`)
+    loadAllCustomers()
+  }
+
+  async function deleteTenant(t: TenantSummary) {
+    if (!await confirmDialog(`Eliminar la barbería ${t.name}? Esta acción no se puede deshacer — sus barberos y clientes perderán acceso a ella inmediatamente.`, { confirmLabel: 'Eliminar' })) return
+    await api.delete(`/super-admin/tenants/${t.id}`)
+    loadAll()
+  }
+
+  async function deleteLicense(l: License) {
+    const warning = l.isAssigned
+      ? `Esta licencia está asignada — al eliminarla, el barbero pierde acceso de inmediato. ¿Eliminar igual?`
+      : `Eliminar esta licencia disponible?`
+    if (!await confirmDialog(warning, { confirmLabel: 'Eliminar' })) return
+    await api.delete(`/super-admin/licenses/${l.id}`)
+    loadAll()
+  }
+
   async function saveMyPassword(e: React.FormEvent) {
     e.preventDefault()
     if (pwForm.newPassword !== pwForm.confirmPassword) {
@@ -600,9 +621,18 @@ export default function SuperAdminPage() {
                             {t.address && <p className="text-zinc-600 text-xs mt-0.5">{t.address}</p>}
                           </div>
                         </div>
-                        <span className={`shrink-0 text-xs px-2.5 py-1 rounded-lg border self-start ${statusLabel[t.status]?.cls ?? 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
-                          {statusLabel[t.status]?.label ?? t.status}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0 self-start">
+                          <span className={`text-xs px-2.5 py-1 rounded-lg border ${statusLabel[t.status]?.cls ?? 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>
+                            {statusLabel[t.status]?.label ?? t.status}
+                          </span>
+                          <button
+                            onClick={() => deleteTenant(t)}
+                            title="Eliminar barbería"
+                            className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-red-500/10 flex items-center justify-center transition-colors group"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* 23.15.5 — dueño, contacto y código de invitación, todo en la misma tarjeta */}
@@ -716,37 +746,63 @@ export default function SuperAdminPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {allCustomers
-                    .filter(c => {
-                      const q = customerQuery.toLowerCase()
-                      if (!q) return true
-                      return c.fullName.toLowerCase().includes(q) ||
-                        c.email?.toLowerCase().includes(q) ||
-                        c.phone.includes(q) ||
-                        c.tenantName.toLowerCase().includes(q)
-                    })
-                    .map(c => (
-                      <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 flex items-center gap-4">
+                  {/* Un mismo correo puede aparecer varias veces a propósito — multi-tenant: un
+                      cliente puede unirse a varias barberías, y cada vínculo es un registro
+                      separado. Se agrupan aquí por usuario para que eso quede claro, en vez de
+                      parecer un dato duplicado/incorrecto. */}
+                  {Array.from(
+                    allCustomers
+                      .filter(c => {
+                        const q = customerQuery.toLowerCase()
+                        if (!q) return true
+                        return c.fullName.toLowerCase().includes(q) ||
+                          c.email?.toLowerCase().includes(q) ||
+                          c.phone.includes(q) ||
+                          c.tenantName.toLowerCase().includes(q)
+                      })
+                      .reduce((groups, c) => {
+                        const key = c.userId ?? c.id
+                        if (!groups.has(key)) groups.set(key, [])
+                        groups.get(key)!.push(c)
+                        return groups
+                      }, new Map<string, PlatformCustomer[]>())
+                      .values()
+                  ).map(group => {
+                    const first = group[0]
+                    return (
+                      <div key={first.userId ?? first.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl px-5 py-4 flex items-start gap-4">
                         <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center shrink-0">
-                          <span className="text-white font-bold text-sm">{c.fullName[0]?.toUpperCase()}</span>
+                          <span className="text-white font-bold text-sm">{first.fullName[0]?.toUpperCase()}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-semibold text-sm truncate">{c.fullName}</p>
-                          <p className="text-zinc-500 text-xs mt-0.5 truncate">{c.email ?? c.phone}</p>
-                          <p className="text-zinc-600 text-xs mt-0.5 truncate flex items-center gap-1">
-                            <Building2 className="w-3 h-3 shrink-0" /> {c.tenantName}
-                          </p>
+                          <p className="text-white font-semibold text-sm truncate">{first.fullName}</p>
+                          <p className="text-zinc-500 text-xs mt-0.5 truncate">{first.email ?? first.phone}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {group.map(c => (
+                              <span key={c.id} className="inline-flex items-center gap-1.5 bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-lg">
+                                <Building2 className="w-3 h-3 shrink-0" /> {c.tenantName}
+                                <button
+                                  onClick={() => deleteCustomer(c)}
+                                  title="Quitar de esta barbería"
+                                  className="text-zinc-500 hover:text-red-400 transition-colors"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                        {c.userId && (
+                        {first.userId && (
                           <button
-                            onClick={() => { setResetTarget({ userId: c.userId!, fullName: c.fullName, email: c.email ?? c.phone, role: 'Customer' }); setResetPassword(''); setResetMsg(null) }}
+                            onClick={() => { setResetTarget({ userId: first.userId!, fullName: first.fullName, email: first.email ?? first.phone, role: 'Customer' }); setResetPassword(''); setResetMsg(null) }}
                             className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition-colors shrink-0"
                           >
                             <Lock className="w-3 h-3" /> Restablecer
                           </button>
                         )}
                       </div>
-                    ))}
+                    )
+                  })}
                   {allCustomers.length === 0 && (
                     <p className="text-zinc-600 text-center py-8">No hay clientes registrados aún</p>
                   )}
@@ -821,6 +877,13 @@ export default function SuperAdminPage() {
                       {l.isExpired && <span className="bg-red-500/20 text-red-400 text-xs px-2 py-1 rounded-lg">Expirada</span>}
                       {l.isAssigned && <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg">Usada (1 solo uso)</span>}
                       {!l.isAssigned && !l.isExpired && <span className="bg-red-600/20 text-red-500 text-xs px-2 py-1 rounded-lg">Disponible</span>}
+                      <button
+                        onClick={() => deleteLicense(l)}
+                        title="Eliminar licencia"
+                        className="w-8 h-8 rounded-xl bg-zinc-800 hover:bg-red-500/10 flex items-center justify-center transition-colors group"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                      </button>
                     </div>
                   </div>
                 ))}

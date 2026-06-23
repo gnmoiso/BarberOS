@@ -14,5 +14,6 @@ internal sealed class BarbershipLicenseConfiguration : IEntityTypeConfiguration<
         builder.Property(l => l.Notes).HasMaxLength(500);
         builder.HasIndex(l => l.Code).IsUnique();
         builder.HasIndex(l => l.TenantId);
+        builder.HasQueryFilter(l => !l.IsDeleted);
     }
 }

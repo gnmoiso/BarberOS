@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Scissors, Users, Calendar, LogOut, UserCheck, Key, Newspaper, Settings, KeyRound, UserCircle,
@@ -39,7 +39,7 @@ export function Sidebar() {
       transition={{ duration: 0.3 }}
     >
       {/* Logo — barbero: su propio logo si lo subió, si no el de BarberOS; cliente: siempre el de BarberOS */}
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-zinc-800">
+      <Link to={user?.role === 'Barber' ? '/barberia/dashboard' : '/user/dashboard'} className="flex items-center gap-2.5 px-6 py-5 border-b border-zinc-800">
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-xl object-cover shrink-0 shadow-lg shadow-black/40" />
         ) : (
@@ -51,7 +51,7 @@ export function Sidebar() {
           </div>
         )}
         <span className="font-black text-xl text-white">Barber<span className="text-red-600">OS</span></span>
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">

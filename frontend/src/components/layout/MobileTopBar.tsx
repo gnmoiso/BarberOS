@@ -1,4 +1,5 @@
 import { Scissors, LogOut } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useBrandLogo } from '@/hooks/useBrandLogo'
 
@@ -8,7 +9,7 @@ export function MobileTopBar() {
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 px-4 h-14 flex items-center justify-between">
-      <div className="flex items-center gap-2">
+      <Link to={user?.role === 'Barber' ? '/barberia/dashboard' : '/user/dashboard'} className="flex items-center gap-2">
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg object-cover shrink-0" />
         ) : (
@@ -20,7 +21,7 @@ export function MobileTopBar() {
           </div>
         )}
         <span className="font-black text-base text-white">Barber<span className="text-red-600">OS</span></span>
-      </div>
+      </Link>
       <div className="flex items-center gap-3">
         <div className="w-7 h-7 rounded-full bg-red-600 ring-2 ring-blue-600/30 overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0">
           {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : (user?.displayName?.[0] ?? user?.fullName?.[0] ?? '?')}
