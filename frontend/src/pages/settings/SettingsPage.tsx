@@ -3,6 +3,7 @@ import { Settings, MapPin, User, DollarSign, CalendarClock, Bell, Image as Image
 import { api } from '@/services/api'
 import { uploadsService } from '@/services/uploads.service'
 import { notifyBrandLogoUpdated } from '@/hooks/useBrandLogo'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface MyTestimonial {
   id: string
@@ -173,6 +174,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div>
         <h1 className="text-2xl font-black text-white">Ajustes de la barbería</h1>
         <p className="text-zinc-400 text-sm mt-1">Configura precios, anticipación de reservas y datos del negocio</p>

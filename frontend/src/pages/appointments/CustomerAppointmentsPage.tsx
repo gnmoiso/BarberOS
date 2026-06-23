@@ -8,6 +8,7 @@ import { servicesService } from '@/services/services.service'
 import { authService } from '@/services/auth.service'
 import { api } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
+import { BackButton } from '@/components/shared/BackButton'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 import { formatCOP } from '@/utils/currency'
 import type { Appointment, Barber, Service, AvailableSlot, MyTenant } from '@/types'
@@ -385,6 +386,7 @@ export default function CustomerAppointmentsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-4">
+      <BackButton fallback="/user/dashboard" />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black text-white">Mis citas</h1>
         <button

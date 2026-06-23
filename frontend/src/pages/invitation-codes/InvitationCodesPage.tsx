@@ -3,6 +3,7 @@ import { Copy, Plus, Trash2, Key, CheckCircle, XCircle, QrCode, Download, X } fr
 import QRCode from 'qrcode'
 import { api } from '@/services/api'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface InvitationCode {
   id: string
@@ -113,6 +114,7 @@ export default function InvitationCodesPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div>
         <h1 className="text-2xl font-black text-white">Codigos de Invitacion</h1>
         <p className="text-zinc-400 text-sm mt-1">Comparte estos codigos con tus clientes para que se unan a tu barberia</p>

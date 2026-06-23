@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { BackButton } from '@/components/shared/BackButton'
 import { formatCOP } from '@/utils/currency'
 import type { Service, CreateServiceRequest } from '@/types'
 
@@ -77,6 +78,7 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Servicios</h1>

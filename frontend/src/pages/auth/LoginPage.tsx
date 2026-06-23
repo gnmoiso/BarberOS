@@ -3,6 +3,8 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Scissors, Eye, EyeOff, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { homeRouteFor } from '@/components/shared/RouteGuard'
+import { BrandLink } from '@/components/shared/BrandLink'
+import { BackButton } from '@/components/shared/BackButton'
 import { api } from '@/services/api'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types'
@@ -118,10 +120,10 @@ export default function LoginPage() {
         </div>
 
         <div className="p-12 relative z-10">
-          <Link to="/" className="flex items-center gap-2.5">
+          <BrandLink className="flex items-center gap-2.5">
             <Logo size={9} logoUrl={platformLogoUrl} />
             <span className="font-black text-xl">Barber<span className="text-red-600">OS</span></span>
-          </Link>
+          </BrandLink>
         </div>
 
         <div className="p-12 relative z-10">
@@ -162,10 +164,12 @@ export default function LoginPage() {
       {/* Panel derecho — formulario */}
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mb-8 lg:hidden">
+          <BrandLink className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors mb-8 lg:hidden">
             <Logo size={6} logoUrl={platformLogoUrl} />
             <span className="font-black">Barber<span className="text-red-600">OS</span></span>
-          </Link>
+          </BrandLink>
+
+          <BackButton fallback="/" className="mb-6" />
 
           <h1 className="text-3xl font-black text-white mb-1">Bienvenido</h1>
           <p className="text-zinc-400 text-sm mb-8">Ingresa a tu panel de BarberOS</p>

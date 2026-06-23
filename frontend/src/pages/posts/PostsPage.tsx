@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useConfirm } from '@/contexts/ConfirmContext'
 import { usePostsRealtime } from '@/hooks/useRealtimeAppointments'
 import { TimeAgo } from '@/components/TimeAgo'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface Reaction { type: string; count: number; viewerReacted: boolean }
 interface Comment {
@@ -456,6 +457,7 @@ export default function PostsPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-5">
+      <BackButton fallback={isBarber ? '/barberia/dashboard' : '/user/dashboard'} />
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-black text-white">Novedades</h1>
         <div className="flex items-center gap-2 shrink-0">

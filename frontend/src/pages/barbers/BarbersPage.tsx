@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { BackButton } from '@/components/shared/BackButton'
 import type { Barber, CreateBarberRequest, WorkSchedule } from '@/types'
 
 const empty: CreateBarberRequest = { displayName: '', phone: '' }
@@ -160,6 +161,7 @@ export default function BarbersPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Equipo de barberos</h1>

@@ -82,21 +82,6 @@ interface PlatformSettings {
   logoUrl?: string
 }
 
-interface PhoneAuditCounts {
-  total: number
-  empty: number
-  tooShort: number
-  tooLong: number
-  invalidChars: number
-  valid: number
-}
-
-interface PhoneAuditReport {
-  users: PhoneAuditCounts
-  barbers: PhoneAuditCounts
-  customers: PhoneAuditCounts
-}
-
 interface OwnerPost {
   id: string
   content: string
@@ -137,7 +122,6 @@ export default function SuperAdminPage() {
   const [tenants, setTenants] = useState<TenantSummary[]>([])
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({})
-  const [phoneAudit, setPhoneAudit] = useState<PhoneAuditReport | null>(null)
   const [loading, setLoading] = useState(false)
 
   // New license form — owner only picks the expiry date, code is auto-generated server-side
@@ -196,12 +180,11 @@ export default function SuperAdminPage() {
   async function loadAll() {
     setLoading(true)
     try {
-      const [l, t, te, s, pa] = await Promise.all([
+      const [l, t, te, s] = await Promise.all([
         api.get('/super-admin/licenses').then(r => r.data),
         api.get('/super-admin/tenants').then(r => r.data),
         api.get('/super-admin/testimonials').then(r => r.data),
         api.get('/super-admin/platform-settings').then(r => r.data),
-        api.get('/super-admin/phone-audit').then(r => r.data).catch(() => null),
       ])
       setLicenses(l)
       setTenants(t)
@@ -209,7 +192,6 @@ export default function SuperAdminPage() {
       const ps = s ?? {}
       setPlatformSettings(ps)
       setSettingsForm(ps)
-      setPhoneAudit(pa)
     } finally {
       setLoading(false)
     }
@@ -458,13 +440,13 @@ export default function SuperAdminPage() {
     <div className="min-h-screen bg-[#0A0A0A] flex">
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-60 h-screen bg-zinc-950 border-r border-zinc-800 fixed left-0 top-0">
-        <div className="flex items-center gap-2.5 px-6 py-5 border-b border-zinc-800">
+        <button onClick={() => setTab('overview')} className="flex items-center gap-2.5 px-6 py-5 border-b border-zinc-800 text-left">
           <Shield className="text-red-600 w-6 h-6" />
           <div>
             <p className="text-white font-black text-sm leading-none">BarberOS</p>
             <p className="text-zinc-500 text-xs">SuperAdmin</p>
           </div>
-        </div>
+        </button>
         <nav className="flex-1 px-3 py-4 space-y-0.5">
           {navItems.map(({ key, label, icon: Icon }) => (
             <button
@@ -491,10 +473,10 @@ export default function SuperAdminPage() {
 
       {/* Mobile header */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-30 bg-zinc-950 border-b border-zinc-800 px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <button onClick={() => setTab('overview')} className="flex items-center gap-2">
           <Shield className="text-red-600 w-5 h-5" />
           <span className="text-white font-bold text-sm">SuperAdmin</span>
-        </div>
+        </button>
         <button onClick={logout} className="text-zinc-400 text-sm">Salir</button>
       </header>
 
@@ -532,34 +514,31 @@ export default function SuperAdminPage() {
                 <StatCard icon={Users} label="Clientes totales" value={stats.totalCustomers} accent="bg-blue-500/10 text-blue-400" />
               </div>
 
-              {/* 23.17.5 — auditoría de teléfonos existentes registrados antes de la regla de 10 dígitos */}
-              {phoneAudit && (
+              {/* Barberías con más actividad — qué tan ocupada está cada una, en vez de una
+                  auditoría de formato de teléfonos que ya no aporta nada en el día a día. */}
+              {tenants.length > 0 && (
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                   <div className="px-6 py-4 border-b border-zinc-800">
-                    <h2 className="text-white font-bold text-sm">Auditoría de teléfonos existentes</h2>
-                    <p className="text-zinc-500 text-xs mt-0.5">Registros que no cumplen la regla de 10 dígitos numéricos</p>
+                    <h2 className="text-white font-bold text-sm">Barberías más activas</h2>
+                    <p className="text-zinc-500 text-xs mt-0.5">Ranking por número de citas registradas</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-zinc-800">
-                    {([
-                      ['Usuarios', phoneAudit.users],
-                      ['Barberos', phoneAudit.barbers],
-                      ['Clientes', phoneAudit.customers],
-                    ] as const).map(([label, c]) => {
-                      const toFix = c.tooShort + c.tooLong + c.invalidChars
-                      return (
-                        <div key={label} className="px-6 py-4">
-                          <p className="text-white font-semibold text-sm mb-2">{label} <span className="text-zinc-500 font-normal">({c.total})</span></p>
-                          <div className="space-y-1 text-xs">
-                            <div className="flex justify-between"><span className="text-zinc-500">Válidos</span><span className="text-green-400">{c.valid}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Sin teléfono</span><span className="text-zinc-400">{c.empty}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Muy corto</span><span className={c.tooShort > 0 ? 'text-orange-400' : 'text-zinc-600'}>{c.tooShort}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Muy largo</span><span className={c.tooLong > 0 ? 'text-orange-400' : 'text-zinc-600'}>{c.tooLong}</span></div>
-                            <div className="flex justify-between"><span className="text-zinc-500">Caracteres inválidos</span><span className={c.invalidChars > 0 ? 'text-orange-400' : 'text-zinc-600'}>{c.invalidChars}</span></div>
-                            <div className="flex justify-between pt-1 border-t border-zinc-800 font-semibold"><span className="text-zinc-300">A corregir</span><span className={toFix > 0 ? 'text-red-400' : 'text-green-400'}>{toFix}</span></div>
+                  <div className="divide-y divide-zinc-800">
+                    {[...tenants]
+                      .sort((a, b) => b.appointmentCount - a.appointmentCount)
+                      .slice(0, 5)
+                      .map((t, i) => (
+                        <div key={t.id} className="px-6 py-3.5 flex items-center gap-3">
+                          <span className="w-6 text-center text-zinc-500 text-sm font-bold shrink-0">{i + 1}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white text-sm font-semibold truncate">{t.name}</p>
+                            <p className="text-zinc-500 text-xs">{t.barberCount} barberos · {t.customerCount} clientes</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-white text-sm font-bold">{t.appointmentCount}</p>
+                            <p className="text-zinc-500 text-xs">{t.ratingCount > 0 ? `${t.averageRatingStars.toFixed(1)} ★` : 'sin calificar'}</p>
                           </div>
                         </div>
-                      )
-                    })}
+                      ))}
                   </div>
                 </div>
               )}

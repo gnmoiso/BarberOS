@@ -4,6 +4,7 @@ import { profileService } from '@/services/profile.service'
 import { uploadsService } from '@/services/uploads.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { sanitizePhoneInput, validatePhone } from '@/utils/phone'
+import { BackButton } from '@/components/shared/BackButton'
 import type { MyProfile } from '@/types'
 
 const roleLabel: Record<string, string> = {
@@ -13,7 +14,7 @@ const roleLabel: Record<string, string> = {
 }
 
 export default function ProfilePage() {
-  const { refreshProfile, updateUserLocal } = useAuth()
+  const { user, refreshProfile, updateUserLocal } = useAuth()
   const [profile, setProfile] = useState<MyProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -107,6 +108,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <BackButton fallback={user?.role === 'Barber' ? '/barberia/dashboard' : '/user/dashboard'} />
       <div>
         <h1 className="text-2xl font-black text-white">Editar perfil</h1>
         <p className="text-zinc-400 text-sm mt-1">{profile && roleLabel[profile.role]}</p>

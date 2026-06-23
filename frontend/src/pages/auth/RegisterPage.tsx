@@ -5,6 +5,8 @@ import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { sanitizePhoneInput, validatePhone } from '@/utils/phone'
 import { api } from '@/services/api'
+import { BrandLink } from '@/components/shared/BrandLink'
+import { BackButton } from '@/components/shared/BackButton'
 
 type Mode = 'select' | 'barber' | 'customer'
 
@@ -74,14 +76,12 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Link to="/" className="text-zinc-400 hover:text-white text-sm mb-6 inline-flex items-center gap-1.5">
-            ← Volver al inicio
-          </Link>
+          <BackButton fallback="/" label="Volver al inicio" className="mb-6" />
           <div className="text-center mb-10">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
+            <BrandLink className="inline-flex items-center gap-2 mb-4">
               <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8" />
               <span className="text-white font-bold text-2xl">BarberOS</span>
-            </Link>
+            </BrandLink>
             <h1 className="text-3xl font-bold text-white mb-2">Crear cuenta</h1>
             <p className="text-zinc-400">¿Cómo quieres usar BarberOS?</p>
           </div>
@@ -146,12 +146,12 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <button onClick={() => setMode('select')} className="text-zinc-400 hover:text-white text-sm mb-4 block mx-auto">
+          <button onClick={() => setMode('select')} className="text-zinc-400 hover:text-white text-sm mb-4 inline-flex items-center gap-1.5 mx-auto">
             ← Volver
           </button>
-          <Link to="/" className="inline-block">
+          <BrandLink className="inline-block">
             <BrandLogo logoUrl={platformLogoUrl} className="w-8 h-8 mx-auto mb-3" />
-          </Link>
+          </BrandLink>
           <h1 className="text-2xl font-bold text-white">
             {isBarber ? 'Registrar barbería' : 'Crear cuenta de cliente'}
           </h1>

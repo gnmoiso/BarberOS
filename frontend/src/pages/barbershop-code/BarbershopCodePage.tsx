@@ -4,6 +4,7 @@ import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
 import { JoinSuccessOverlay } from '@/components/JoinSuccessOverlay'
+import { BackButton } from '@/components/shared/BackButton'
 import type { MyTenant } from '@/types'
 
 const statusLabel: Record<string, { label: string; cls: string }> = {
@@ -68,6 +69,7 @@ export default function BarbershopCodePage() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6">
+      <BackButton fallback="/user/dashboard" />
       <div>
         <h1 className="text-2xl font-black text-white">Codigo de barberia</h1>
         <p className="text-zinc-400 text-sm mt-1">

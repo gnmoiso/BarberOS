@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Scissors, Phone, Mail, MessageCircle, KeyRound, ArrowRight } from 'lucide-react'
 import { api } from '@/services/api'
 import { useAuth } from '@/contexts/AuthContext'
+import { BrandLink } from '@/components/shared/BrandLink'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface PlatformSettings {
   contactPhone?: string
@@ -41,10 +43,13 @@ export default function ContactBarberOSPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
       <div className="w-full max-w-lg text-center">
+        <BackButton fallback="/" className="mb-6" />
         <div className="mb-8">
-          <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Scissors className="text-red-600 w-10 h-10" />
-          </div>
+          <BrandLink className="inline-block">
+            <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Scissors className="text-red-600 w-10 h-10" />
+            </div>
+          </BrandLink>
           <h1 className="text-3xl font-bold text-white mb-3">
             ¡Bienvenido, {user?.fullName}!
           </h1>

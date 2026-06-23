@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { KeyRound, Phone, Mail, MessageCircle, ArrowLeft } from 'lucide-react'
+import { KeyRound, Phone, Mail, MessageCircle } from 'lucide-react'
 import { api } from '@/services/api'
+import { BrandLink } from '@/components/shared/BrandLink'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface PlatformSettings {
   contactPhone?: string
@@ -23,14 +24,14 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Link to="/login" className="text-zinc-400 hover:text-white text-sm mb-6 inline-flex items-center gap-1.5">
-          <ArrowLeft className="w-4 h-4" /> Volver a iniciar sesión
-        </Link>
+        <BackButton fallback="/login" label="Volver a iniciar sesión" className="mb-6" />
 
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <KeyRound className="text-red-600 w-8 h-8" />
-          </div>
+          <BrandLink className="inline-block">
+            <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <KeyRound className="text-red-600 w-8 h-8" />
+            </div>
+          </BrandLink>
           <h1 className="text-2xl font-bold text-white mb-2">¿Olvidaste tu contraseña?</h1>
           <p className="text-zinc-400 text-sm">
             Por ahora la recuperación se hace por contacto directo — escríbenos y te ayudamos a restablecerla.

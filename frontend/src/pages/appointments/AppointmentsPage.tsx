@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/Card'
 import { PageSpinner } from '@/components/ui/Spinner'
 import { useRealtimeAppointments } from '@/hooks/useRealtimeAppointments'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { BackButton } from '@/components/shared/BackButton'
 import { formatCOP } from '@/utils/currency'
 import type { Appointment, Barber, Service, BookAppointmentRequest, AvailableSlot } from '@/types'
 
@@ -149,6 +150,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Citas</h1>

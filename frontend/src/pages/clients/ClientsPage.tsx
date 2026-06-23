@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Star, Percent, Trash2, Users, Search, AlertTriangle } from 'lucide-react'
 import { api } from '@/services/api'
 import { useConfirm } from '@/contexts/ConfirmContext'
+import { BackButton } from '@/components/shared/BackButton'
 
 interface Client {
   id: string
@@ -64,6 +65,7 @@ export default function ClientsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      <BackButton fallback="/barberia/dashboard" />
       <div>
         <h1 className="text-2xl font-black text-white">Clientes</h1>
         <p className="text-zinc-400 text-sm mt-1">{clients.length} clientes en tu barberia</p>

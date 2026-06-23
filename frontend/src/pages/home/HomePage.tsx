@@ -5,6 +5,7 @@ import {
   Bell, BarChart3, Quote, ArrowRight, Sparkles,
 } from 'lucide-react'
 import { api } from '@/services/api'
+import { BrandLink } from '@/components/shared/BrandLink'
 
 interface Testimonial {
   id: string
@@ -67,10 +68,10 @@ export default function HomePage() {
       {/* Nav */}
       <nav className="fixed top-[3px] w-full z-50 bg-[#0A0A0A]/85 backdrop-blur-md border-b border-zinc-800/60">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
+          <BrandLink className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 shrink-0">
             <Logo size={9} logoUrl={platformLogoUrl} />
             <span className="font-black text-lg sm:text-xl tracking-tight whitespace-nowrap">Barber<span className="text-red-600">OS</span></span>
-          </div>
+          </BrandLink>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
             <a href="#features" className="hover:text-white transition-colors">Características</a>
             <a href="#how" className="hover:text-white transition-colors">Cómo funciona</a>

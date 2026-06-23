@@ -5,6 +5,8 @@ import { authService } from '@/services/auth.service'
 import { useAuth } from '@/contexts/AuthContext'
 import { QrCodeReader, extractInviteToken } from '@/components/QrCodeReader'
 import { JoinSuccessOverlay } from '@/components/JoinSuccessOverlay'
+import { BrandLink } from '@/components/shared/BrandLink'
+import { BackButton } from '@/components/shared/BackButton'
 
 export default function JoinBarbershopPage() {
   const navigate = useNavigate()
@@ -65,14 +67,15 @@ export default function JoinBarbershopPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
+        <BackButton fallback="/user/dashboard" className="mb-6" />
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <KeyRound className="text-red-600 w-8 h-8" />
           </div>
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <BrandLink className="flex items-center justify-center gap-2 mb-4">
             <Scissors className="text-red-600 w-5 h-5" />
             <span className="text-white font-bold text-xl">BarberOS</span>
-          </div>
+          </BrandLink>
           <h1 className="text-2xl font-bold text-white mb-2">Unirte a una barbería</h1>
           <p className="text-zinc-400 text-sm">
             Ingresa el código o escanea el QR que te compartió tu barbero
