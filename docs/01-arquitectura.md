@@ -1,5 +1,18 @@
 # 01 — Arquitectura
 
+> ## ⚠️ Estado real de implementación (2026-06-23)
+>
+> Este documento es el plan de arquitectura de Fase 0 (2026-06-09), escrito antes de que existiera código. Sigue vigente como descripción de las **capas y la regla de dependencia** (sección 2) y del **estilo monolito modular** (sección 1) — eso sí se construyó tal cual. **No es confiable** para lo demás:
+>
+> - **No hay módulos verticales con contratos/eventos de integración entre sí** (sección 3 y 6) — la organización real es por carpetas de feature dentro de cada capa (`Auth`, `Appointments`, `Catalog`, `Customers`, `Posts`, `SuperAdmin`...), sin el aislamiento estricto ni el catálogo de eventos descrito.
+> - **No existe Outbox transaccional ni worker separado** (sección 6 y 7) — no hay notificaciones de ningún tipo (WhatsApp/email/push) que dependan de esto.
+> - **No hay Billing, Notifications ni Audit como módulos** — no hay pagos/suscripciones implementados, y la auditoría es solo campos (`CreatedAt`/`UpdatedAt`/`IsDeleted`), no un módulo `AuditLog` transversal.
+> - El frontend real es **React 19 + Vite**, no Angular (la topología de la sección 7 menciona "BarberOS.Frontend (estáticos Angular)").
+>
+> Ver el inventario real completo en [`docs/current-state.md`](current-state.md), la historia de cómo se llegó aquí en [`docs/project-evolution.md`](project-evolution.md), y el veredicto detallado de este documento en [`docs/documentation-audit.md`](documentation-audit.md).
+>
+> El contenido original de Fase 0 continúa abajo sin modificar, como registro de la intención y el razonamiento de diseño original.
+
 ## 1. Estilo arquitectónico: monolito modular
 
 **Decisión:** un único desplegable (`BarberOS.API`) organizado internamente en módulos con fronteras estrictas, sobre Clean Architecture. Microservicios quedan **descartados** para esta etapa (ver [ADR-001](adr/ADR-001-monolito-modular.md)).
