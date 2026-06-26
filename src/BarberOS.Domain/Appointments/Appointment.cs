@@ -100,6 +100,17 @@ public sealed class Appointment : BaseAuditableEntity
         }
     }
 
+    /// <summary>
+    /// Whether the customer can rate this appointment right now. Deliberately NOT tied to the
+    /// barber marking it Confirmed/InProgress/Completed — barbers are often too busy mid-service
+    /// to update appointment status promptly, so the rating option opens purely on elapsed time
+    /// (one hour after the service was scheduled to start) regardless of status, as long as the
+    /// appointment wasn't cancelled or a no-show.
+    /// </summary>
+    public bool CanBeRated(DateTimeOffset now) =>
+        Status is not (AppointmentStatus.CancelledByCustomer or AppointmentStatus.CancelledByBarber or AppointmentStatus.NoShow)
+        && now >= StartsAt.AddHours(1);
+
     public void Reschedule(Guid barberId, DateTimeOffset newStartsAt)
     {
         if (Status is not (AppointmentStatus.Pending or AppointmentStatus.Confirmed))

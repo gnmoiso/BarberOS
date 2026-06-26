@@ -15,6 +15,7 @@ interface AppointmentItem {
   startsAt: string
   status: string
   isRated: boolean
+  canRate?: boolean
 }
 
 function RatingModal({ appointment, onClose, onRated }: { appointment: AppointmentItem; onClose: () => void; onRated: () => void }) {
@@ -110,10 +111,12 @@ export default function CustomerDashboardPage() {
 
   const attended = appointments.filter(a => a.status === 'Completed').length
   const missed = appointments.filter(a => a.status === 'NoShow').length
-  const pendingRating = appointments.filter(a => a.status === 'Completed' && !a.isRated)
+  // canRate opens an hour after the appointment's scheduled start regardless of whether the
+  // barber ever marked it Confirmed/InProgress/Completed — busy barbers often don't.
+  const pendingRating = appointments.filter(a => a.canRate && !a.isRated)
 
   const history = appointments
-    .filter(a => a.status === 'Completed' || a.status === 'NoShow' || a.status.startsWith('Cancelled'))
+    .filter(a => a.status === 'Completed' || a.status === 'NoShow' || a.status.startsWith('Cancelled') || a.canRate)
     .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
     .slice(0, 8)
 
@@ -223,7 +226,7 @@ export default function CustomerDashboardPage() {
                   <p className="text-zinc-500 text-xs">con {a.barberName} · {new Date(a.startsAt).toLocaleDateString('es-CO')}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  {a.status === 'Completed' && !a.isRated && (
+                  {a.canRate && !a.isRated && (
                     <button
                       onClick={() => setRatingTarget(a)}
                       className="text-xs bg-red-600/15 text-red-400 px-2.5 py-1 rounded-lg hover:bg-red-600/25 transition-colors"
@@ -232,11 +235,11 @@ export default function CustomerDashboardPage() {
                     </button>
                   )}
                   <span className={`text-xs px-2.5 py-1 rounded-lg ${
-                    a.status === 'Completed' ? 'bg-green-500/15 text-green-400'
-                    : a.status === 'NoShow' ? 'bg-orange-500/15 text-orange-400'
-                    : 'bg-zinc-800 text-zinc-500'
+                    a.status === 'NoShow' ? 'bg-orange-500/15 text-orange-400'
+                    : a.status.startsWith('Cancelled') ? 'bg-zinc-800 text-zinc-500'
+                    : 'bg-green-500/15 text-green-400'
                   }`}>
-                    {a.status === 'Completed' ? 'Asistió' : a.status === 'NoShow' ? 'No asistió' : 'Cancelada'}
+                    {a.status === 'NoShow' ? 'No asistió' : a.status.startsWith('Cancelled') ? 'Cancelada' : 'Asistió'}
                   </span>
                 </div>
               </div>

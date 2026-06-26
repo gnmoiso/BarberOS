@@ -28,16 +28,24 @@ internal sealed class GetBookingEligibilityQueryHandler(
         if (customerIds.Count == 0) return new BookingEligibilityDto(true, null, null, null, minBookableDate);
 
         var history = await appointments.ListByCustomerIdsAsync(customerIds, page: 1, size: 200, ct);
+        var now = DateTimeOffset.UtcNow;
 
-        var active = history.FirstOrDefault(a => a.Status is AppointmentStatus.Pending or AppointmentStatus.Confirmed);
+        // "Activa" = todavía no llegó la hora en que se habilita la calificación — no basta con
+        // mirar Pending/Confirmed/InProgress a secas, porque un barbero ocupado puede dejar una
+        // cita en ese estado para siempre y eso bloquearía al cliente de reservar indefinidamente.
+        var active = history.FirstOrDefault(a =>
+            a.Status is AppointmentStatus.Pending or AppointmentStatus.Confirmed or AppointmentStatus.InProgress
+            && now < a.StartsAt.AddHours(1));
         if (active is not null)
             return new BookingEligibilityDto(false, BlockMessage, active.Id, null, minBookableDate);
 
-        foreach (var completed in history.Where(a => a.Status == AppointmentStatus.Completed))
+        // Misma idea para la calificación pendiente: se habilita por tiempo transcurrido, no por
+        // que el barbero haya marcado la cita como Completed.
+        foreach (var rateable in history.Where(a => a.CanBeRated(now)))
         {
-            var rated = await ratings.FindServiceRatingByAppointmentAsync(completed.Id, ct) is not null;
+            var rated = await ratings.FindServiceRatingByAppointmentAsync(rateable.Id, ct) is not null;
             if (!rated)
-                return new BookingEligibilityDto(false, BlockMessage, completed.Id, completed.StartsAt.AddMinutes(50), minBookableDate);
+                return new BookingEligibilityDto(false, BlockMessage, rateable.Id, rateable.StartsAt.AddHours(1), minBookableDate);
         }
 
         return new BookingEligibilityDto(true, null, null, null, minBookableDate);

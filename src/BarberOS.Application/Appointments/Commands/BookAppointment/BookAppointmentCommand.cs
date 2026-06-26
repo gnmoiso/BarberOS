@@ -36,6 +36,7 @@ public sealed record AppointmentResponse(
     string? Notes,
     decimal? PenaltyAmount,
     bool IsRated = false,
+    bool CanRate = false,
     IReadOnlyList<AppointmentAddOnResponse>? AddOns = null,
     decimal TotalPrice = 0,
     Guid TenantId = default,

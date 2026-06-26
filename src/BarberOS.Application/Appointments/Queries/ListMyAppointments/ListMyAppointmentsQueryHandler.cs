@@ -30,8 +30,9 @@ internal sealed class ListMyAppointmentsQueryHandler(
         foreach (var a in history)
         {
             var barber = await barbers.FindByIdAsync(a.BarberId, ct);
-            var isRated = a.Status == AppointmentStatus.Completed
-                && await ratings.FindServiceRatingByAppointmentAsync(a.Id, ct) is not null;
+            // Not gated on Status == Completed — a customer can rate (and therefore have
+            // already rated) an appointment the barber never advanced past Confirmed/InProgress.
+            var isRated = await ratings.FindServiceRatingByAppointmentAsync(a.Id, ct) is not null;
             var customerName = customerById[a.CustomerId].FullName;
             var tenantName = tenantNameMap.GetValueOrDefault(a.TenantId, "Barbería");
             result.Add(BookAppointmentCommandHandler.ToResponse(a, customerName, barber?.DisplayName ?? "Unknown", isRated, tenantName));

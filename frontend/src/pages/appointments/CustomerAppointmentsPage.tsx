@@ -369,7 +369,7 @@ export default function CustomerAppointmentsPage() {
   const nextAppointment = upcoming[0]
 
   const history = appointments
-    .filter(a => a.status === 'Completed' || a.status === 'NoShow' || a.status.startsWith('Cancelled'))
+    .filter(a => a.status === 'Completed' || a.status === 'NoShow' || a.status.startsWith('Cancelled') || a.canRate)
     .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
 
   const ratingReady = eligibility && !eligibility.canBook && eligibility.ratingAvailableAt
@@ -466,11 +466,11 @@ export default function CustomerAppointmentsPage() {
                   <p className="text-zinc-500 text-xs">con {a.barberName} · {new Date(a.startsAt).toLocaleDateString('es-CO')}</p>
                 </div>
                 <span className={`text-xs px-2.5 py-1 rounded-lg shrink-0 ${
-                  a.status === 'Completed' ? 'bg-green-500/15 text-green-400'
-                  : a.status === 'NoShow' ? 'bg-orange-500/15 text-orange-400'
-                  : 'bg-zinc-800 text-zinc-500'
+                  a.status === 'NoShow' ? 'bg-orange-500/15 text-orange-400'
+                  : a.status.startsWith('Cancelled') ? 'bg-zinc-800 text-zinc-500'
+                  : 'bg-green-500/15 text-green-400'
                 }`}>
-                  {a.status === 'Completed' ? 'Asistió' : a.status === 'NoShow' ? 'No asistió' : 'Cancelada'}
+                  {a.status === 'NoShow' ? 'No asistió' : a.status.startsWith('Cancelled') ? 'Cancelada' : 'Asistió'}
                 </span>
               </div>
             ))}

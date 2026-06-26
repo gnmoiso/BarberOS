@@ -122,14 +122,20 @@ internal sealed class BookAppointmentCommandHandler(
         if (customerIds.Count == 0) return;
 
         var history = await appointments.ListByCustomerIdsAsync(customerIds, page: 1, size: 200, ct);
+        var now = DateTimeOffset.UtcNow;
 
-        var hasActive = history.Any(a => a.Status is AppointmentStatus.Pending or AppointmentStatus.Confirmed);
+        // Mirrors GetBookingEligibilityQueryHandler — "activa" es por tiempo transcurrido, no por
+        // estado a secas, porque un barbero ocupado puede dejar una cita en Pending/Confirmed/
+        // InProgress para siempre y eso bloquearía al cliente de reservar indefinidamente.
+        var hasActive = history.Any(a =>
+            a.Status is AppointmentStatus.Pending or AppointmentStatus.Confirmed or AppointmentStatus.InProgress
+            && now < a.StartsAt.AddHours(1));
         if (hasActive)
             throw new ConflictException("CUSTOMER_HAS_ACTIVE_APPOINTMENT", blockMessage);
 
-        foreach (var completed in history.Where(a => a.Status == AppointmentStatus.Completed))
+        foreach (var rateable in history.Where(a => a.CanBeRated(now)))
         {
-            var rated = await ratings.FindServiceRatingByAppointmentAsync(completed.Id, ct) is not null;
+            var rated = await ratings.FindServiceRatingByAppointmentAsync(rateable.Id, ct) is not null;
             if (!rated)
                 throw new ConflictException("CUSTOMER_HAS_UNRATED_APPOINTMENT", blockMessage);
         }
@@ -164,6 +170,7 @@ internal sealed class BookAppointmentCommandHandler(
         return new(a.Id, a.CustomerId, customerName, a.BarberId, barberName, a.ServiceId,
             a.ServiceName, a.ServicePrice, a.ServiceDurationMinutes,
             a.StartsAt, a.EndsAt, a.Status.ToString(), a.Notes, a.PenaltyAmount, isRated,
+            a.CanBeRated(DateTimeOffset.UtcNow),
             addOns, totalPrice, a.TenantId, tenantName);
     }
 }

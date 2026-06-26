@@ -208,6 +208,9 @@ export interface Appointment {
   penaltyAmount?: number
   penaltyReason?: string
   isRated?: boolean
+  /** Time-based, not tied to the barber marking the appointment Completed — opens automatically
+   * one hour after the scheduled start, regardless of status (unless cancelled/no-show). */
+  canRate?: boolean
   addOns?: AppointmentAddOn[]
   totalPrice?: number
   tenantId?: string
