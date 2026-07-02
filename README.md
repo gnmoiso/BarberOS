@@ -1,9 +1,12 @@
 # BarberOS
 
-Plataforma SaaS multi-tenant para barberías. Una misma barbería gestiona barberos, servicios, clientes, citas y publicaciones; un mismo cliente puede vincularse a varias barberías. Mercado inicial: Colombia.
+**Plataforma SaaS multi-tenant para barberías, en producción en [barberos.club](https://barberos.club).**
 
-> **Estado del proyecto (2026-06-23): en producción.**
-> El backend (.NET 10) y el frontend (React/Vite) están desplegados y operativos en **https://barberos.club**, coexistiendo en el mismo VPS que otro proyecto (TitanPro). Esto reemplaza por completo el estado descrito en la documentación original de Fase 0 (`docs/00-fase0-checklist.md` y siguientes), que describía un plan de arquitectura todavía sin código — ver [`docs/project-evolution.md`](docs/project-evolution.md) para la historia completa y [`docs/current-state.md`](docs/current-state.md) para el inventario detallado de qué está hecho, qué falta y qué deuda técnica existe.
+Gestión completa de una barbería: agenda de citas, catálogo de servicios, staff, CRM de clientes, novedades/posts y calificaciones — todo en tiempo real. Un mismo cliente puede pertenecer a varias barberías. Mercado inicial: Colombia.
+
+**Stack**: .NET 10 (ASP.NET Core, Clean Architecture) · PostgreSQL 17 · React 19 + Vite + TailwindCSS v4 · SignalR · Docker · Nginx
+
+> La documentación en `docs/00`–`docs/15` corresponde al plan de arquitectura original (Fase 0, escrito antes de que existiera código). Ver [`docs/current-state.md`](docs/current-state.md) para el inventario real de lo implementado y [`docs/project-evolution.md`](docs/project-evolution.md) para la historia del proyecto.
 
 ---
 
@@ -133,7 +136,7 @@ dotnet ef database update --project src/BarberOS.Infrastructure --startup-projec
 dotnet run --project src/BarberOS.API --urls http://localhost:5050
 ```
 
-La API expone Swagger en `http://localhost:5050/swagger` solo en `Development`. Al iniciar, siembra automáticamente un SuperAdmin (`admin@barberos.io` / `SuperAdmin1234!` por defecto — **cambiar en cualquier entorno que no sea desechable**).
+La API expone Swagger en `http://localhost:5050/swagger` solo en `Development`. Al iniciar siembra automáticamente un SuperAdmin con las credenciales definidas en el seeder — **cambiar de inmediato en cualquier entorno que no sea desechable** (en producción ya están rotadas).
 
 > **Nota:** `deploy/docker-compose.dev.yml` también levanta contenedores de **MinIO** y **MailHog**. Quedan del plan original de storage/email y **no están conectados a ningún código real** — el backend no los usa. Se documentan aquí para que no generen confusión, no porque hagan falta para correr el proyecto hoy.
 
